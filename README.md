@@ -65,7 +65,14 @@
   <img src="docs/screenshots/08_ai_workspace.png" alt="AI Workspace" width="800"/>
 </p>
 
-### 📊 Health Dashboard
+### � Emergency Detection
+> When critical symptoms (chest pain, heart attack, breathing difficulty) are detected, the system triggers an **Emergency Alert** — displaying red flags, possible causes (Acute Coronary Syndrome, Pulmonary Embolism), immediate next steps, and a full-screen emergency overlay with a direct call-to-action to contact 112.
+
+| Emergency Triage Panel | Emergency Overlay |
+|:-:|:-:|
+| ![Emergency Triage](docs/screenshots/13_emergency_triage.png) | ![Emergency Overlay](docs/screenshots/12_emergency_overlay.png) |
+
+### �📊 Health Dashboard
 > Comprehensive daily overview with health score, vital signs (heart rate, SpO2, sleep, steps), wellness trends, AQI monitoring, and daily AI insights.
 
 <p align="center">
