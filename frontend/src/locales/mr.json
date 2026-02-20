@@ -1,0 +1,205 @@
+{
+    "appName": "चिकित्सक",
+    "tagline": "AI चालित वैयक्तिक आरोग्य ऑपरेटिंग सिस्टम",
+    "nav": {
+        "home": "मुख्यपृष्ठ",
+        "features": "वैशिष्ट्ये",
+        "conditions": "आजार",
+        "about": "आमच्याबद्दल",
+        "solutions": "आमचे उपाय",
+        "login": "लॉगिन",
+        "signup": "साइन अप",
+        "language": "भाषा",
+        "signOut": "साइन आउट",
+        "notifications": "सूचना",
+        "noNotifications": "नवीन सूचना नाहीत"
+    },
+    "hero": {
+        "title": "तुमचा AI आरोग्य साथीदार",
+        "subtitle": "तुमची लक्षणे सांगा, वैद्यकीय अहवाल अपलोड करा किंवा आरोग्य माहिती शोधा.",
+        "placeholder": "तुमची लक्षणे सांगा किंवा वैद्यकीय अहवाल अपलोड करा…",
+        "pills": {
+            "symptom": "लक्षण तपासणी",
+            "lab": "लॅब अहवाल विश्लेषण",
+            "medication": "औषध माहिती"
+        }
+    },
+    "careAreas": {
+        "title": "काळजी क्षेत्रे",
+        "subtitle": "विविध आरोग्य क्षेत्रांमध्ये विशेष AI मार्गदर्शन मिळवा",
+        "general": "सामान्य लक्षणे",
+        "mental": "मानसिक आरोग्य",
+        "nutrition": "पोषण आणि आहार",
+        "child": "बाल आरोग्य",
+        "women": "महिला आरोग्य",
+        "men": "पुरुष आरोग्य",
+        "senior": "ज्येष्ठ काळजी",
+        "medication": "औषध मार्गदर्शन"
+    },
+    "locationHealth": {
+        "title": "स्थान आरोग्य",
+        "subtitle": "तुमच्या शहरासाठी आरोग्य सूचना आणि पर्यावरण डेटा",
+        "aqi": "हवा गुणवत्ता निर्देशांक",
+        "weather": "हवामान",
+        "uvIndex": "UV निर्देशांक",
+        "humidity": "आर्द्रता",
+        "trendingRisks": "ट्रेंडिंग आरोग्य जोखीम",
+        "seasonalAdvisory": "हंगामी सल्ला"
+    },
+    "myHealth": {
+        "title": "माझे आरोग्य",
+        "overview": "आढावा",
+        "medicalHistory": "वैद्यकीय इतिहास",
+        "labReports": "लॅब अहवाल",
+        "medicationLogs": "औषध नोंदी",
+        "nutritionLogs": "पोषण नोंदी",
+        "mentalLogs": "मानसिक नोंदी",
+        "wearableData": "वेअरेबल डेटा",
+        "healthScore": "आरोग्य स्कोअर",
+        "connectDevice": "डिव्हाइस जोडा"
+    },
+    "careDomains": {
+        "childHealth": "बाल आरोग्य",
+        "womenHealth": "महिला आरोग्य",
+        "menHealth": "पुरुष आरोग्य",
+        "seniorCare": "ज्येष्ठ काळजी"
+    },
+    "disclaimer": {
+        "title": "महत्त्वाचा वैद्यकीय अस्वीकरण",
+        "content": "चिकित्सक AI-जनित आरोग्य माहिती प्रदान करतो आणि हे व्यावसायिक वैद्यकीय सल्ला, निदान किंवा उपचाराचा पर्याय नाही.",
+        "accept": "स्वीकारा आणि पुढे जा",
+        "exit": "बाहेर पडा",
+        "checkboxLabel": "मला समजते की चिकित्सक AI-जनित आरोग्य माहिती प्रदान करतो."
+    },
+    "wearables": {
+        "connectAppleHealth": "Apple Health जोडा",
+        "connectGoogleFit": "Google Fit जोडा",
+        "connectFitbit": "Fitbit जोडा",
+        "heartRate": "हृदय गती",
+        "sleepDuration": "झोपेचा कालावधी",
+        "steps": "पावले",
+        "spO2": "SpO2 पातळी",
+        "lastSynced": "शेवटचे सिंक"
+    },
+    "warnings": {
+        "educationalOnly": "ही प्रणाली केवळ शैक्षणिक मार्गदर्शन प्रदान करते.",
+        "medicationWarning": "औषध सुरू करण्यापूर्वी किंवा थांबवण्यापूर्वी नेहमी परवानाधारक डॉक्टरांचा सल्ला घ्या.",
+        "globalDisclaimer": "चिकित्सक AI-जनित आरोग्य माहिती प्रदान करतो.",
+        "crisisHelpline": "तुम्ही संकटात असाल तर कृपया तात्काळ हेल्पलाइनवर कॉल करा."
+    },
+    "symptoms": {
+        "title": "लक्षण तपासणी",
+        "addSymptoms": "तुमची लक्षणे जोडा",
+        "searchPlaceholder": "शोधा, उदा., डोकेदुखी",
+        "levelOfCare": "काळजीची पातळी",
+        "severity": "तीव्रता",
+        "duration": "कालावधी",
+        "analysisResults": "विश्लेषण निकाल",
+        "possibleConditions": "संभाव्य परिस्थिती",
+        "triageLevel": "ट्रायएज पातळी",
+        "aiConfidence": "AI विश्वास",
+        "startAIChat": "तपशीलवार AI चॅट सुरू करा"
+    },
+    "testimonials": {
+        "title": "वापरकर्ते काय म्हणतात",
+        "subtitle": "वैयक्तिक आरोग्य मार्गदर्शनासाठी हजारो लोकांचा विश्वास"
+    },
+    "footer": {
+        "description": "AI-चालित वैयक्तिक आरोग्य ऑपरेटिंग सिस्टम.",
+        "product": "उत्पादन",
+        "company": "कंपनी",
+        "legal": "कायदेशीर",
+        "privacy": "गोपनीयता धोरण",
+        "terms": "सेवा अटी"
+    },
+    "sidebar": {
+        "dashboard": "डॅशबोर्ड",
+        "workspace": "AI कार्यक्षेत्र",
+        "mentalHealth": "मानसिक आरोग्य",
+        "nutrition": "पोषण",
+        "conditions": "आजार ग्रंथालय",
+        "locationHealth": "स्थान आरोग्य",
+        "myHealth": "माझे आरोग्य नोंदी",
+        "settings": "सेटिंग्ज"
+    },
+    "chat": {
+        "newChat": "नवीन चॅट",
+        "today": "आज",
+        "yesterday": "काल",
+        "lastWeek": "मागील आठवडा",
+        "placeholder": "तुमचा संदेश टाइप करा...",
+        "send": "पाठवा",
+        "modeSymptom": "लक्षण",
+        "modeLab": "लॅब",
+        "modeMedication": "औषध"
+    },
+    "insights": {
+        "possibleCauses": "संभाव्य कारणे",
+        "triageLevel": "ट्रायएज पातळी",
+        "redFlags": "धोक्याचे संकेत",
+        "nextSteps": "पुढील पावले",
+        "aiConfidence": "AI विश्वास",
+        "emergency": "आणीबाणी",
+        "urgent": "तातडीचे",
+        "primaryCare": "प्राथमिक काळजी",
+        "selfCare": "स्व-काळजी"
+    },
+    "emergency": {
+        "title": "आणीबाणी ओळखली",
+        "subtitle": "तात्काळ वैद्यकीय मदत घ्या",
+        "callNow": "आणीबाणी सेवांना कॉल करा",
+        "number": "112",
+        "instruction": "विलंब करू नका. तात्काळ आणीबाणी सेवांना कॉल करा."
+    },
+    "dashboard": {
+        "title": "आरोग्य डॅशबोर्ड",
+        "healthScore": "आरोग्य स्कोअर",
+        "recentSymptoms": "अलीकडील लक्षणे",
+        "medicationSummary": "औषध सारांश",
+        "labAlerts": "लॅब सूचना",
+        "wearableInsights": "वेअरेबल अंतर्दृष्टी",
+        "locationRisk": "स्थान जोखीम",
+        "personalizedFor": "तुमच्यासाठी वैयक्तिकृत"
+    },
+    "mentalHealth": {
+        "title": "मानसिक आरोग्य",
+        "moodScore": "मूड स्कोअर",
+        "stressMeter": "ताण मीटर",
+        "crisisHelpline": "संकट हेल्पलाइन"
+    },
+    "nutritionModule": {
+        "title": "पोषण ट्रॅकर",
+        "dailyCalories": "दैनंदिन कॅलरीज",
+        "mealLog": "जेवण नोंद",
+        "macros": "मॅक्रोन्यूट्रिएंट्स",
+        "warnings": "चेतावणी"
+    },
+    "conditionsLib": {
+        "title": "आजार ग्रंथालय",
+        "search": "आजार शोधा...",
+        "overview": "आढावा",
+        "symptoms": "लक्षणे",
+        "causes": "कारणे",
+        "riskFactors": "जोखीम घटक",
+        "prevention": "प्रतिबंध",
+        "whenToSeeDoctor": "डॉक्टरांना कधी भेटावे"
+    },
+    "calculators": {
+        "title": "आरोग्य कॅल्क्युलेटर",
+        "bmi": "BMI कॅल्क्युलेटर",
+        "calorie": "कॅलरी गरजा",
+        "heartRisk": "हृदय जोखीम",
+        "waterIntake": "पाणी सेवन"
+    },
+    "settings": {
+        "title": "सेटिंग्ज",
+        "profile": "प्रोफाइल",
+        "language": "भाषा",
+        "notifications": "सूचना प्राधान्ये",
+        "appearance": "स्वरूप",
+        "dataManagement": "डेटा व्यवस्थापन",
+        "privacy": "गोपनीयता आणि सुरक्षितता",
+        "exportData": "माझा डेटा निर्यात करा",
+        "deleteData": "सर्व डेटा हटवा"
+    }
+}

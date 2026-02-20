@@ -1,0 +1,206 @@
+{
+    "appName": "चिकित्सक",
+    "tagline": "AI संचालित व्यक्तिगत स्वास्थ्य ऑपरेटिंग सिस्टम",
+    "nav": {
+        "home": "होम",
+        "features": "विशेषताएं",
+        "conditions": "स्थितियाँ",
+        "about": "हमारे बारे में",
+        "solutions": "हमारे समाधान",
+        "login": "लॉगिन",
+        "signup": "साइन अप",
+        "language": "भाषा",
+        "signOut": "साइन आउट",
+        "notifications": "सूचनाएं",
+        "noNotifications": "कोई नई सूचना नहीं"
+    },
+    "hero": {
+        "title": "आपका AI स्वास्थ्य साथी",
+        "subtitle": "अपने लक्षणों का वर्णन करें, मेडिकल रिपोर्ट अपलोड करें, या स्वास्थ्य अंतर्दृष्टि का अन्वेषण करें।",
+        "placeholder": "अपने लक्षणों का वर्णन करें या अपनी मेडिकल रिपोर्ट अपलोड करें…",
+        "pills": {
+            "symptom": "लक्षण जाँच",
+            "lab": "लैब रिपोर्ट विश्लेषण",
+            "medication": "दवा की जानकारी"
+        }
+    },
+    "careAreas": {
+        "title": "देखभाल के क्षेत्र",
+        "subtitle": "विभिन्न स्वास्थ्य डोमेन में विशेष AI मार्गदर्शन प्राप्त करें",
+        "general": "सामान्य लक्षण",
+        "mental": "मानसिक स्वास्थ्य",
+        "nutrition": "पोषण और आहार",
+        "child": "बाल स्वास्थ्य",
+        "women": "महिला स्वास्थ्य",
+        "men": "पुरुष स्वास्थ्य",
+        "senior": "वरिष्ठ देखभाल",
+        "medication": "दवा मार्गदर्शन"
+    },
+    "locationHealth": {
+        "title": "स्थान स्वास्थ्य",
+        "subtitle": "आपके शहर के लिए स्वास्थ्य चेतावनी और पर्यावरण डेटा",
+        "aqi": "वायु गुणवत्ता सूचकांक",
+        "weather": "मौसम",
+        "uvIndex": "UV सूचकांक",
+        "humidity": "नमी",
+        "trendingRisks": "ट्रेंडिंग स्वास्थ्य जोखिम",
+        "seasonalAdvisory": "मौसमी सलाह"
+    },
+    "myHealth": {
+        "title": "मेरा स्वास्थ्य",
+        "overview": "अवलोकन",
+        "medicalHistory": "चिकित्सा इतिहास",
+        "labReports": "लैब रिपोर्ट",
+        "medicationLogs": "दवा लॉग",
+        "nutritionLogs": "पोषण लॉग",
+        "mentalLogs": "मानसिक लॉग",
+        "wearableData": "पहनने योग्य डेटा",
+        "healthScore": "स्वास्थ्य स्कोर",
+        "connectDevice": "डिवाइस कनेक्ट करें"
+    },
+    "careDomains": {
+        "childHealth": "बाल स्वास्थ्य",
+        "womenHealth": "महिला स्वास्थ्य",
+        "menHealth": "पुरुष स्वास्थ्य",
+        "seniorCare": "वरिष्ठ देखभाल"
+    },
+    "disclaimer": {
+        "title": "महत्वपूर्ण चिकित्सा अस्वीकरण",
+        "content": "चिकित्सक AI-जनित स्वास्थ्य जानकारी प्रदान करता है और यह पेशेवर चिकित्सा सलाह, निदान या उपचार का विकल्प नहीं है।",
+        "accept": "स्वीकार करें और जारी रखें",
+        "exit": "बाहर निकलें",
+        "checkboxLabel": "मैं समझता/समझती हूँ कि चिकित्सक AI-जनित स्वास्थ्य जानकारी प्रदान करता है।"
+    },
+    "wearables": {
+        "connectAppleHealth": "Apple Health कनेक्ट करें",
+        "connectGoogleFit": "Google Fit कनेक्ट करें",
+        "connectFitbit": "Fitbit कनेक्ट करें",
+        "heartRate": "हृदय गति",
+        "sleepDuration": "नींद की अवधि",
+        "steps": "कदम",
+        "spO2": "SpO2 स्तर",
+        "lastSynced": "अंतिम सिंक"
+    },
+    "warnings": {
+        "educationalOnly": "यह प्रणाली केवल शैक्षिक मार्गदर्शन प्रदान करती है।",
+        "medicationWarning": "दवा शुरू करने या बंद करने से पहले हमेशा लाइसेंस प्राप्त चिकित्सक से परामर्श करें।",
+        "globalDisclaimer": "चिकित्सक AI-जनित स्वास्थ्य जानकारी प्रदान करता है।",
+        "crisisHelpline": "यदि आप संकट में हैं, तो कृपया तुरंत हेल्पलाइन पर कॉल करें।"
+    },
+    "symptoms": {
+        "title": "लक्षण जाँच",
+        "addSymptoms": "अपने लक्षण जोड़ें",
+        "searchPlaceholder": "खोजें, उदा., सिरदर्द",
+        "levelOfCare": "देखभाल का स्तर",
+        "severity": "गंभीरता",
+        "duration": "अवधि",
+        "analysisResults": "विश्लेषण परिणाम",
+        "possibleConditions": "संभावित स्थितियाँ",
+        "triageLevel": "ट्राइएज स्तर",
+        "aiConfidence": "AI विश्वास",
+        "startAIChat": "विस्तृत AI चैट शुरू करें"
+    },
+    "testimonials": {
+        "title": "उपयोगकर्ता क्या कहते हैं",
+        "subtitle": "व्यक्तिगत स्वास्थ्य मार्गदर्शन के लिए हज़ारों लोगों द्वारा विश्वसनीय"
+    },
+    "footer": {
+        "description": "AI-संचालित व्यक्तिगत स्वास्थ्य ऑपरेटिंग सिस्टम।",
+        "product": "उत्पाद",
+        "company": "कंपनी",
+        "legal": "कानूनी",
+        "privacy": "गोपनीयता नीति",
+        "terms": "सेवा की शर्तें"
+    },
+    "sidebar": {
+        "dashboard": "डैशबोर्ड",
+        "workspace": "AI कार्यक्षेत्र",
+        "mentalHealth": "मानसिक स्वास्थ्य",
+        "nutrition": "पोषण",
+        "conditions": "स्थितियाँ पुस्तकालय",
+        "locationHealth": "स्थान स्वास्थ्य",
+        "myHealth": "मेरा स्वास्थ्य",
+        "calculators": "कैलकुलेटर",
+        "settings": "सेटिंग्स"
+    },
+    "chat": {
+        "newChat": "नई चैट",
+        "today": "आज",
+        "yesterday": "कल",
+        "lastWeek": "पिछला सप्ताह",
+        "placeholder": "अपना संदेश टाइप करें...",
+        "send": "भेजें",
+        "modeSymptom": "लक्षण",
+        "modeLab": "लैब",
+        "modeMedication": "दवा"
+    },
+    "insights": {
+        "possibleCauses": "संभावित कारण",
+        "triageLevel": "ट्राइएज स्तर",
+        "redFlags": "खतरे के संकेत",
+        "nextSteps": "अगले कदम",
+        "aiConfidence": "AI विश्वास",
+        "emergency": "आपातकाल",
+        "urgent": "अत्यावश्यक",
+        "primaryCare": "प्राथमिक देखभाल",
+        "selfCare": "स्व-देखभाल"
+    },
+    "emergency": {
+        "title": "आपातकाल पहचाना गया",
+        "subtitle": "तत्काल चिकित्सा सहायता लें",
+        "callNow": "आपातकालीन सेवाओं को कॉल करें",
+        "number": "112",
+        "instruction": "देरी न करें। तुरंत आपातकालीन सेवाओं को कॉल करें।"
+    },
+    "dashboard": {
+        "title": "स्वास्थ्य डैशबोर्ड",
+        "healthScore": "स्वास्थ्य स्कोर",
+        "recentSymptoms": "हाल के लक्षण",
+        "medicationSummary": "दवा सारांश",
+        "labAlerts": "लैब चेतावनी",
+        "wearableInsights": "पहनने योग्य अंतर्दृष्टि",
+        "locationRisk": "स्थान जोखिम",
+        "personalizedFor": "आपके लिए व्यक्तिगत"
+    },
+    "mentalHealth": {
+        "title": "मानसिक स्वास्थ्य",
+        "moodScore": "मूड स्कोर",
+        "stressMeter": "तनाव मीटर",
+        "crisisHelpline": "संकट हेल्पलाइन"
+    },
+    "nutritionModule": {
+        "title": "पोषण ट्रैकर",
+        "dailyCalories": "दैनिक कैलोरी",
+        "mealLog": "भोजन लॉग",
+        "macros": "मैक्रोन्यूट्रिएंट्स",
+        "warnings": "चेतावनी"
+    },
+    "conditionsLib": {
+        "title": "स्थितियाँ पुस्तकालय",
+        "search": "स्थितियाँ खोजें...",
+        "overview": "अवलोकन",
+        "symptoms": "लक्षण",
+        "causes": "कारण",
+        "riskFactors": "जोखिम कारक",
+        "prevention": "रोकथाम",
+        "whenToSeeDoctor": "डॉक्टर से कब मिलें"
+    },
+    "calculators": {
+        "title": "स्वास्थ्य कैलकुलेटर",
+        "bmi": "BMI कैलकुलेटर",
+        "calorie": "कैलोरी आवश्यकता",
+        "heartRisk": "हृदय जोखिम",
+        "waterIntake": "पानी का सेवन"
+    },
+    "settings": {
+        "title": "सेटिंग्स",
+        "profile": "प्रोफ़ाइल",
+        "language": "भाषा",
+        "notifications": "सूचना प्राथमिकताएं",
+        "appearance": "दिखावट",
+        "dataManagement": "डेटा प्रबंधन",
+        "privacy": "गोपनीयता और सुरक्षा",
+        "exportData": "मेरा डेटा निर्यात करें",
+        "deleteData": "सभी डेटा हटाएं"
+    }
+}

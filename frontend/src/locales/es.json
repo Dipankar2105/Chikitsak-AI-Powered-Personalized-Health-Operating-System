@@ -1,0 +1,202 @@
+{
+    "appName": "Chikitsak",
+    "tagline": "Sistema operativo de salud personalizado impulsado por IA",
+    "nav": {
+        "home": "Inicio",
+        "features": "Características",
+        "conditions": "Condiciones",
+        "about": "Acerca de",
+        "login": "Iniciar sesión",
+        "signup": "Registrarse",
+        "language": "Idioma"
+    },
+    "hero": {
+        "title": "Tu Compañero de Salud con IA",
+        "subtitle": "Describe tus síntomas, sube informes médicos o explora información de salud — impulsado por IA inteligente.",
+        "placeholder": "Describe tus síntomas o sube tu informe médico…",
+        "pills": {
+            "symptom": "Verificador de Síntomas",
+            "lab": "Análisis de Laboratorio",
+            "medication": "Info de Medicamentos"
+        }
+    },
+    "careAreas": {
+        "title": "Explorar Áreas de Cuidado",
+        "subtitle": "Obtén orientación especializada de IA en diferentes dominios de salud",
+        "general": "Síntomas Generales",
+        "mental": "Salud Mental",
+        "nutrition": "Nutrición y Dieta",
+        "child": "Salud Infantil",
+        "women": "Salud de la Mujer",
+        "men": "Salud del Hombre",
+        "senior": "Cuidado de Ancianos",
+        "medication": "Guía de Medicamentos"
+    },
+    "locationHealth": {
+        "title": "Salud por Ubicación",
+        "subtitle": "Alertas de salud y datos ambientales para tu ciudad",
+        "aqi": "Índice de Calidad del Aire",
+        "weather": "Clima",
+        "uvIndex": "Índice UV",
+        "humidity": "Humedad",
+        "trendingRisks": "Riesgos de Salud en Tendencia",
+        "seasonalAdvisory": "Aviso Estacional"
+    },
+    "myHealth": {
+        "title": "Mi Salud",
+        "overview": "Resumen",
+        "medicalHistory": "Historial Médico",
+        "labReports": "Informes de Laboratorio",
+        "medicationLogs": "Registro de Medicamentos",
+        "nutritionLogs": "Registro de Nutrición",
+        "mentalLogs": "Registro Mental",
+        "wearableData": "Datos de Wearable",
+        "healthScore": "Puntuación de Salud",
+        "connectDevice": "Conectar Dispositivo"
+    },
+    "careDomains": {
+        "childHealth": "Salud Infantil",
+        "womenHealth": "Salud de la Mujer",
+        "menHealth": "Salud del Hombre",
+        "seniorCare": "Cuidado de Ancianos"
+    },
+    "disclaimer": {
+        "title": "Importante Aviso Médico",
+        "content": "Chikitsak proporciona información de salud generada por IA y no es un sustituto del consejo médico profesional.",
+        "accept": "Aceptar y Continuar",
+        "exit": "Salir",
+        "checkboxLabel": "Entiendo que Chikitsak proporciona información de salud generada por IA."
+    },
+    "wearables": {
+        "connectAppleHealth": "Conectar Apple Health",
+        "connectGoogleFit": "Conectar Google Fit",
+        "connectFitbit": "Conectar Fitbit",
+        "heartRate": "Frecuencia Cardíaca",
+        "sleepDuration": "Duración del Sueño",
+        "steps": "Pasos",
+        "spO2": "Nivel de SpO2",
+        "lastSynced": "Última Sincronización"
+    },
+    "warnings": {
+        "educationalOnly": "Este sistema proporciona solo orientación educativa.",
+        "medicationWarning": "Consulte siempre a un médico antes de iniciar o suspender medicamentos.",
+        "globalDisclaimer": "Chikitsak proporciona información de salud generada por IA.",
+        "crisisHelpline": "Si está en crisis, llame a la línea de ayuda inmediatamente."
+    },
+    "symptoms": {
+        "title": "Verificador de Síntomas",
+        "addSymptoms": "Agregue sus síntomas",
+        "searchPlaceholder": "Buscar, ej., dolor de cabeza",
+        "levelOfCare": "Nivel de Cuidado",
+        "severity": "Gravedad",
+        "duration": "Duración",
+        "analysisResults": "Resultados del Análisis",
+        "possibleConditions": "Condiciones Posibles",
+        "triageLevel": "Nivel de Triaje",
+        "aiConfidence": "Confianza de IA",
+        "startAIChat": "Iniciar Chat Detallado con IA"
+    },
+    "testimonials": {
+        "title": "Lo que dicen los usuarios",
+        "subtitle": "Miles confían en nosotros para orientación de salud personalizada"
+    },
+    "footer": {
+        "description": "Sistema operativo de salud personalizado impulsado por IA.",
+        "product": "Producto",
+        "company": "Empresa",
+        "legal": "Legal",
+        "privacy": "Política de Privacidad",
+        "terms": "Términos de Servicio"
+    },
+    "sidebar": {
+        "dashboard": "Panel",
+        "workspace": "Espacio de Trabajo IA",
+        "mentalHealth": "Salud Mental",
+        "nutrition": "Nutrición",
+        "conditions": "Biblioteca de Condiciones",
+        "locationHealth": "Salud por Ubicación",
+        "myHealth": "Mi Salud",
+        "calculators": "Calculadoras",
+        "settings": "Configuración"
+    },
+    "chat": {
+        "newChat": "Nuevo Chat",
+        "today": "Hoy",
+        "yesterday": "Ayer",
+        "lastWeek": "Semana Pasada",
+        "placeholder": "Escribe tu mensaje...",
+        "send": "Enviar",
+        "modeSymptom": "Síntoma",
+        "modeLab": "Lab",
+        "modeMedication": "Medicamento"
+    },
+    "insights": {
+        "possibleCauses": "Causas Posibles",
+        "triageLevel": "Nivel de Triaje",
+        "redFlags": "Banderas Rojas",
+        "nextSteps": "Próximos Pasos",
+        "aiConfidence": "Confianza de IA",
+        "emergency": "Emergencia",
+        "urgent": "Urgente",
+        "primaryCare": "Atención Primaria",
+        "selfCare": "Autocuidado"
+    },
+    "emergency": {
+        "title": "EMERGENCIA DETECTADA",
+        "subtitle": "Busque atención médica inmediata",
+        "callNow": "Llame a Servicios de Emergencia",
+        "number": "112",
+        "instruction": "No se demore. Llame a los servicios de emergencia inmediatamente."
+    },
+    "dashboard": {
+        "title": "Panel de Salud",
+        "healthScore": "Puntuación de Salud",
+        "recentSymptoms": "Síntomas Recientes",
+        "medicationSummary": "Resumen de Medicamentos",
+        "labAlerts": "Alertas de Laboratorio",
+        "wearableInsights": "Datos de Wearable",
+        "locationRisk": "Riesgo por Ubicación",
+        "personalizedFor": "Personalizado para Ti"
+    },
+    "mentalHealth": {
+        "title": "Salud Mental",
+        "moodScore": "Puntuación de Ánimo",
+        "stressMeter": "Medidor de Estrés",
+        "crisisHelpline": "Línea de Crisis"
+    },
+    "nutritionModule": {
+        "title": "Rastreador de Nutrición",
+        "dailyCalories": "Calorías Diarias",
+        "mealLog": "Registro de Comidas",
+        "macros": "Macronutrientes",
+        "warnings": "Advertencias"
+    },
+    "conditionsLib": {
+        "title": "Biblioteca de Condiciones",
+        "search": "Buscar condiciones...",
+        "overview": "Resumen",
+        "symptoms": "Síntomas",
+        "causes": "Causas",
+        "riskFactors": "Factores de Riesgo",
+        "prevention": "Prevención",
+        "whenToSeeDoctor": "Cuándo Ver al Médico"
+    },
+    "calculators": {
+        "title": "Calculadoras de Salud",
+        "bmi": "Calculadora de IMC",
+        "calorie": "Necesidades Calóricas",
+        "heartRisk": "Riesgo Cardíaco",
+        "waterIntake": "Consumo de Agua"
+    },
+    "settings": {
+        "title": "Configuración",
+        "profile": "Perfil",
+        "language": "Idioma",
+        "notifications": "Preferencias de Notificación",
+        "appearance": "Apariencia",
+        "dataManagement": "Gestión de Datos",
+        "privacy": "Privacidad y Seguridad",
+        "exportData": "Exportar Mis Datos",
+        "deleteData": "Eliminar Todos los Datos"
+    }
+}

@@ -1,0 +1,21 @@
+drug_a,drug_b,severity,description
+aspirin,warfarin,high,Increased bleeding risk
+aspirin,ibuprofen,moderate,Reduced cardioprotective effect of aspirin
+warfarin,ibuprofen,high,Significantly increased bleeding risk
+metformin,alcohol,moderate,Risk of lactic acidosis
+lisinopril,potassium,high,Risk of hyperkalemia
+lisinopril,spironolactone,high,Risk of hyperkalemia
+simvastatin,amlodipine,moderate,Increased risk of myopathy
+simvastatin,grapefruit,moderate,Elevated statin levels — myopathy risk
+metoprolol,verapamil,high,Risk of bradycardia and heart block
+fluoxetine,tramadol,high,Serotonin syndrome risk
+fluoxetine,maoi,critical,Severe serotonin syndrome — potentially fatal
+ciprofloxacin,antacid,moderate,Reduced ciprofloxacin absorption
+digoxin,amiodarone,high,Digoxin toxicity risk
+clopidogrel,omeprazole,moderate,Reduced antiplatelet efficacy
+methotrexate,nsaid,high,Increased methotrexate toxicity
+sildenafil,nitroglycerin,critical,Significant hypotension
+levothyroxine,calcium,moderate,Reduced levothyroxine absorption
+theophylline,ciprofloxacin,high,Increased theophylline levels
+clozapine,carbamazepine,critical,Bone marrow suppression risk
+lithium,nsaid,high,Increased lithium toxicity

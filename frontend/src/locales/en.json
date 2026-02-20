@@ -1,0 +1,206 @@
+{
+  "appName": "Chikitsak",
+  "tagline": "AI Powered Personalized Health Operating System",
+  "nav": {
+    "home": "Home",
+    "features": "Features",
+    "conditions": "Conditions",
+    "about": "About",
+    "solutions": "Our Solutions",
+    "login": "Log In",
+    "signup": "Sign Up",
+    "language": "Language",
+    "signOut": "Sign Out",
+    "notifications": "Notifications",
+    "noNotifications": "No new notifications"
+  },
+  "hero": {
+    "title": "Your AI Health Companion",
+    "subtitle": "Describe your symptoms, upload medical reports, or explore health insights — powered by intelligent AI.",
+    "placeholder": "Describe your symptoms or upload your medical report…",
+    "pills": {
+      "symptom": "Symptom Checker",
+      "lab": "Lab Report Analysis",
+      "medication": "Medication Info"
+    }
+  },
+  "careAreas": {
+    "title": "Explore Care Areas",
+    "subtitle": "Get specialized AI guidance across different health domains",
+    "general": "General Symptoms",
+    "mental": "Mental Health",
+    "nutrition": "Nutrition & Diet",
+    "child": "Child Health",
+    "women": "Women's Health",
+    "men": "Men's Health",
+    "senior": "Senior Care",
+    "medication": "Medication Guidance"
+  },
+  "locationHealth": {
+    "title": "Location Health",
+    "subtitle": "Health alerts and environmental data for your city",
+    "aqi": "Air Quality Index",
+    "weather": "Weather",
+    "uvIndex": "UV Index",
+    "humidity": "Humidity",
+    "trendingRisks": "Trending Health Risks",
+    "seasonalAdvisory": "Seasonal Advisory"
+  },
+  "myHealth": {
+    "title": "My Health",
+    "overview": "Overview",
+    "medicalHistory": "Medical History",
+    "labReports": "Lab Reports",
+    "medicationLogs": "Medication Logs",
+    "nutritionLogs": "Nutrition Logs",
+    "mentalLogs": "Mental Logs",
+    "wearableData": "Wearable Data",
+    "healthScore": "Health Score",
+    "connectDevice": "Connect Device"
+  },
+  "careDomains": {
+    "childHealth": "Child Health",
+    "womenHealth": "Women's Health",
+    "menHealth": "Men's Health",
+    "seniorCare": "Senior Care"
+  },
+  "disclaimer": {
+    "title": "Important Medical Disclaimer",
+    "content": "Chikitsak provides AI-generated health information and is not a substitute for professional medical advice, diagnosis, or treatment.",
+    "accept": "Accept & Continue",
+    "exit": "Exit",
+    "checkboxLabel": "I understand that Chikitsak provides AI-generated health information and is not a substitute for professional medical advice, diagnosis, or treatment."
+  },
+  "wearables": {
+    "connectAppleHealth": "Connect Apple Health",
+    "connectGoogleFit": "Connect Google Fit",
+    "connectFitbit": "Connect Fitbit",
+    "heartRate": "Heart Rate",
+    "sleepDuration": "Sleep Duration",
+    "steps": "Steps",
+    "spO2": "SpO2 Level",
+    "lastSynced": "Last Synced"
+  },
+  "warnings": {
+    "educationalOnly": "This system provides educational guidance only. Not a replacement for professional diagnosis.",
+    "medicationWarning": "Always consult a licensed physician before starting or stopping medication.",
+    "globalDisclaimer": "Chikitsak provides AI-generated health information. It is not a substitute for professional medical advice, diagnosis, or treatment.",
+    "crisisHelpline": "If you are in crisis, please call the helpline immediately."
+  },
+  "symptoms": {
+    "title": "Symptom Checker",
+    "addSymptoms": "Add your symptoms",
+    "searchPlaceholder": "Search, e.g., headache",
+    "levelOfCare": "Level of Care",
+    "severity": "Severity",
+    "duration": "Duration",
+    "analysisResults": "Analysis Results",
+    "possibleConditions": "Possible Conditions",
+    "triageLevel": "Triage Level",
+    "aiConfidence": "AI Confidence",
+    "startAIChat": "Start Detailed AI Chat"
+  },
+  "testimonials": {
+    "title": "What Users Say",
+    "subtitle": "Trusted by thousands for personalized healthcare guidance"
+  },
+  "footer": {
+    "description": "AI-powered personalized health operating system providing intelligent healthcare guidance.",
+    "product": "Product",
+    "company": "Company",
+    "legal": "Legal",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "workspace": "AI Workspace",
+    "mentalHealth": "Mental Health",
+    "nutrition": "Nutrition",
+    "conditions": "Conditions Library",
+    "locationHealth": "Location Health",
+    "myHealth": "My Health",
+    "calculators": "Calculators",
+    "settings": "Settings"
+  },
+  "chat": {
+    "newChat": "New Chat",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "lastWeek": "Last Week",
+    "placeholder": "Type your message...",
+    "send": "Send",
+    "modeSymptom": "Symptom",
+    "modeLab": "Lab",
+    "modeMedication": "Medication"
+  },
+  "insights": {
+    "possibleCauses": "Possible Causes",
+    "triageLevel": "Triage Level",
+    "redFlags": "Red Flags",
+    "nextSteps": "Next Steps",
+    "aiConfidence": "AI Confidence",
+    "emergency": "Emergency",
+    "urgent": "Urgent",
+    "primaryCare": "Primary Care",
+    "selfCare": "Self Care"
+  },
+  "emergency": {
+    "title": "EMERGENCY DETECTED",
+    "subtitle": "Seek immediate medical attention",
+    "callNow": "Call Emergency Services",
+    "number": "112",
+    "instruction": "Do not delay. Call emergency services immediately."
+  },
+  "dashboard": {
+    "title": "Health Dashboard",
+    "healthScore": "Health Score",
+    "recentSymptoms": "Recent Symptoms",
+    "medicationSummary": "Medication Summary",
+    "labAlerts": "Lab Alerts",
+    "wearableInsights": "Wearable Insights",
+    "locationRisk": "Location Risk",
+    "personalizedFor": "Personalized for You"
+  },
+  "mentalHealth": {
+    "title": "Mental Health",
+    "moodScore": "Mood Score",
+    "stressMeter": "Stress Meter",
+    "crisisHelpline": "Crisis Helpline"
+  },
+  "nutritionModule": {
+    "title": "Nutrition Tracker",
+    "dailyCalories": "Daily Calories",
+    "mealLog": "Meal Log",
+    "macros": "Macronutrients",
+    "warnings": "Warnings"
+  },
+  "conditionsLib": {
+    "title": "Conditions Library",
+    "search": "Search conditions...",
+    "overview": "Overview",
+    "symptoms": "Symptoms",
+    "causes": "Causes",
+    "riskFactors": "Risk Factors",
+    "prevention": "Prevention",
+    "whenToSeeDoctor": "When to See a Doctor"
+  },
+  "calculators": {
+    "title": "Health Calculators",
+    "bmi": "BMI Calculator",
+    "calorie": "Calorie Needs",
+    "heartRisk": "Heart Risk",
+    "waterIntake": "Water Intake"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "language": "Language",
+    "notifications": "Notification Preferences",
+    "appearance": "Appearance",
+    "dataManagement": "Data Management",
+    "privacy": "Privacy & Security",
+    "exportData": "Export My Data",
+    "deleteData": "Delete All Data"
+  }
+}
