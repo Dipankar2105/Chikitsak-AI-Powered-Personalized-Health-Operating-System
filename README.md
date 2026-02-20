@@ -21,10 +21,10 @@
 
 ## 📹 Demo Video
 
-> Full walkthrough showing landing page, login, AI chat workspace, and dashboard navigation.
+> Full walkthrough showing landing page, login, AI chat workspace, dashboard, and more.
 
 <p align="center">
-  <img src="docs/app_demo.webp" alt="Chikitsak AI Demo" width="800"/>
+  <img src="docs/app_demo.webp" alt="Chikitsak AI Full Demo" width="800"/>
 </p>
 
 ---
@@ -45,12 +45,11 @@
   <img src="docs/screenshots/02_care_areas.png" alt="Care Areas" width="800"/>
 </p>
 
-### 🌐 Multi-Language Support
-> Switch between English, हिंदी (Hindi), and मराठी (Marathi) — language persists across sessions.
+### ⭐ Community Reviews & Footer
 
-| Language Dropdown | Hindi View |
-|:-:|:-:|
-| ![Language Switch](docs/screenshots/04_language_switch.png) | ![Hindi View](docs/screenshots/05_hindi_view.png) |
+<p align="center">
+  <img src="docs/screenshots/03_testimonials.png" alt="Testimonials & Footer" width="800"/>
+</p>
 
 ### 🔐 Authentication
 > Secure login with JWT-based authentication. Dual-panel design with branded illustration.
@@ -67,7 +66,7 @@
 </p>
 
 ### 📊 Health Dashboard
-> Comprehensive daily overview with health score, vital signs, wellness trends, AQI monitoring, and daily AI insights.
+> Comprehensive daily overview with health score, vital signs (heart rate, SpO2, sleep, steps), wellness trends, AQI monitoring, and daily AI insights.
 
 <p align="center">
   <img src="docs/screenshots/09_dashboard.png" alt="Dashboard" width="800"/>
@@ -97,7 +96,7 @@
 | 📄 **Lab Report Analysis** | Upload and get AI-powered interpretation of blood work, CBCs, and more |
 | 💊 **Medication Check** | Drug interaction checks and dosage information |
 | 🖼️ **Medical Image Analysis** | Upload X-rays or medical images for AI-assisted analysis |
-| 🌐 **Multi-Language** | Full i18n support — English, Hindi (हिंदी), Marathi (मराठी) |
+| 🧠 **Mental Health Mode** | Emotion detection (sadness, anger, fear) with empathetic responses and crisis helplines |
 | 📊 **Health Dashboard** | Daily health score, vital monitoring, wellness trends |
 | 📍 **Location Health** | AQI, temperature, humidity, and local disease trends for your area |
 | 🗣️ **Voice Input** | Speak your symptoms using browser speech recognition |
@@ -106,41 +105,164 @@
 
 ---
 
-## 🏗 Architecture
+## 🏗 System Architecture
 
+```mermaid
+graph TD
+    subgraph Frontend ["Next.js Frontend :3000"]
+        UI[React UI + Zustand Store]
+    end
+
+    subgraph Backend ["FastAPI Backend :8000"]
+        MW[Middleware: CORS + Response Wrapper]
+        EH[Exception Handlers]
+        MW --> Router
+
+        subgraph Router ["Route Layer"]
+            AUTH["/auth — register/login/refresh/logout"]
+            CHAT["/chat — dual-mode chatbot"]
+            USERS["/users — profile + health summary"]
+            PRED["/predict — MRI/X-ray/skin/food"]
+            LAB["/lab — analyze"]
+            DRUG["/drug — interactions"]
+            MENTAL["/mental — analyze"]
+            FULL["/full-health — orchestrator"]
+        end
+
+        subgraph Services ["Service Layer"]
+            AUTH_SVC["auth_service (bcrypt + JWT)"]
+            CHAT_SVC["chat_service (dual-mode)"]
+            HEALTH_SVC["health_summary_service"]
+            XRAY_SVC["xray_service"]
+        end
+
+        subgraph ML ["ML Engines (lazy-loaded)"]
+            MEDQUAD["medquad_engine — TF-IDF Q&A"]
+            MENTAL_ML["mental_engine — emotion classifier"]
+            TRIAGE["triage_infer — disease prediction"]
+            SEVERITY["severity_engine — symptom scoring"]
+            LAB_ML["lab_engine — reference ranges"]
+            DRUG_ML["drug_engine — interaction lookup"]
+        end
+    end
+
+    subgraph DB ["SQLite / PostgreSQL"]
+        TABLES["users · auth_sessions · chat_history · symptom_logs · nutrition_logs · medication_logs · lab_reports · xray_reports"]
+    end
+
+    UI -->|REST + JWT Bearer| MW
+    AUTH --> AUTH_SVC
+    CHAT --> CHAT_SVC
+    CHAT_SVC --> MEDQUAD
+    CHAT_SVC --> MENTAL_ML
+    PRED --> XRAY_SVC
+    DRUG --> DRUG_ML
+    LAB --> LAB_ML
+    MENTAL --> MENTAL_ML
+    FULL --> TRIAGE
+    FULL --> SEVERITY
+    AUTH_SVC --> DB
+    CHAT_SVC --> DB
+    HEALTH_SVC --> DB
 ```
-┌──────────────────────────────────────────────────┐
-│                   FRONTEND                       │
-│              Next.js 14 (App Router)             │
-│                                                  │
-│  ┌──────────┐ ┌──────────┐ ┌──────────────────┐  │
-│  │  Navbar  │ │ Sidebar  │ │   Pages (23+)    │  │
-│  │  Footer  │ │ Collapse │ │ Dashboard, Chat, │  │
-│  │  i18n    │ │  Mobile  │ │ Reports, Health  │  │
-│  └──────────┘ └──────────┘ └──────────────────┘  │
-│                     │                            │
-│           ┌─────────▼─────────┐                  │
-│           │  Zustand Store    │                  │
-│           │  (Global State)   │                  │
-│           └─────────┬─────────┘                  │
-└─────────────────────┼────────────────────────────┘
-                      │  fetch() + JWT Bearer
-                      ▼
-┌──────────────────────────────────────────────────┐
-│                   BACKEND                        │
-│               FastAPI (Python)                   │
-│                                                  │
-│  ┌────────────┐ ┌─────────────┐ ┌─────────────┐ │
-│  │ POST /chat │ │ /auth/login │ │ /auth/      │ │
-│  │            │ │ /auth/reg   │ │  register   │ │
-│  └─────┬──────┘ └──────┬──────┘ └─────────────┘ │
-│        │               │                        │
-│  ┌─────▼──────┐  ┌─────▼──────┐                 │
-│  │  Gemini AI │  │  JWT Auth  │                 │
-│  │  MedQuAD   │  │  bcrypt    │                 │
-│  │  ML Models │  │  SQLAlchemy│                 │
-│  └────────────┘  └────────────┘                 │
-└──────────────────────────────────────────────────┘
+
+---
+
+## 🤖 ML Model Workflows
+
+### Chatbot (Dual-Mode) — `POST /chat`
+
+```mermaid
+flowchart LR
+    A[User Message] --> B{mode?}
+    B -->|health| C[medquad_engine]
+    B -->|mental| D[mental_engine]
+    C --> E[TF-IDF + Cosine Similarity]
+    E -->|confidence > 15%| F[Return matched answer]
+    E -->|low confidence| G[Rule-based fallback]
+    D --> H[TF-IDF + Logistic Regression]
+    H --> I[Emotion: sadness/anger/fear/etc.]
+    I --> J[Generate empathetic response]
+    A --> K{Crisis keywords?}
+    K -->|yes| L["🆘 Emergency helplines"]
+```
+
+| Component | Input | ML Method | Output |
+|-----------|-------|-----------|--------|
+| Health Mode | Text query | TF-IDF cosine similarity on MedQuAD | Medical answer + confidence |
+| Mental Mode | Text | TF-IDF + sklearn classifier | Emotion + severity + response |
+| Crisis Detection | Text | Keyword matching | Emergency flag + helpline numbers |
+
+### Disease Triage — `POST /full-health/analyze`
+
+```mermaid
+flowchart LR
+    S[Symptoms Array] --> V[Build binary vector]
+    V --> M[Random Forest / XGBoost model]
+    M --> P[Predicted disease/prognosis]
+```
+
+### Other ML Pipelines
+
+| Pipeline | Endpoint | Method |
+|----------|----------|--------|
+| **Severity Scoring** | Built-in | Symptom → CSV weight lookup → Sum → Mild/Moderate/High/Emergency |
+| **Lab Analysis** | `POST /lab/analyze` | User values vs reference ranges CSV → Low/High/Normal flags |
+| **Drug Interactions** | `POST /drug/check` | O(n²) pairwise lookup against interaction database |
+| **X-Ray / Image** | `POST /predict/*` | PyTorch model inference (or heuristic fallback) |
+
+---
+
+## 🔑 Authentication Flow
+
+```mermaid
+sequenceDiagram
+    participant F as Frontend
+    participant B as Backend
+    participant DB as Database
+
+    F->>B: POST /auth/register {name, email, password}
+    B->>B: bcrypt.hashpw(password)
+    B->>DB: INSERT user
+    B->>DB: INSERT auth_session (refresh_token)
+    B-->>F: {access_token, refresh_token, user}
+
+    F->>B: POST /auth/login {email, password}
+    B->>DB: SELECT user WHERE email
+    B->>B: bcrypt.checkpw(password, hash)
+    B->>DB: INSERT new auth_session
+    B-->>F: {access_token, refresh_token, user}
+
+    F->>B: POST /chat (Authorization: Bearer token)
+    B->>B: Decode JWT → get user_id
+    B-->>F: Chat response
+```
+
+---
+
+## 📡 API Endpoints
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| `POST` | `/auth/register` | Register new user | ❌ |
+| `POST` | `/auth/login` | Login & get JWT token | ❌ |
+| `POST` | `/chat` | Dual-mode chatbot (health/mental) | ✅ Bearer |
+| `POST` | `/full-health/analyze` | Full health triage + severity | ✅ Bearer |
+| `POST` | `/predict/xray` | X-ray image analysis | ✅ Bearer |
+| `POST` | `/lab/analyze` | Lab report interpretation | ✅ Bearer |
+| `POST` | `/drug/check` | Drug interaction checker | ✅ Bearer |
+| `GET` | `/users/me` | Get current user profile | ✅ Bearer |
+| `GET` | `/chat/history` | Retrieve chat history | ✅ Bearer |
+| `GET` | `/docs` | Swagger API documentation | ❌ |
+
+### Response Format (All Endpoints)
+
+```json
+// Success
+{"success": true, "data": { ... }, "message": "OK"}
+
+// Error
+{"success": false, "error": "Invalid email or password", "data": null}
 ```
 
 ---
@@ -152,7 +274,6 @@
 - **Node.js** >= 18.x
 - **Python** >= 3.10
 - **npm** or **yarn**
-- **Google Gemini API Key** (for AI chat)
 
 ### 1. Clone the Repository
 
@@ -173,10 +294,10 @@ pip install -r requirements.txt
 
 # Set environment variables
 cp .env.example .env
-# Edit .env and add your GEMINI_API_KEY
+# Edit .env and add your GEMINI_API_KEY (optional for enhanced AI)
 
 # Start the backend
-uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
+python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
 ```
 
 ### 3. Frontend Setup
@@ -195,6 +316,11 @@ npm run dev
 
 Navigate to **http://localhost:3000** 🎉
 
+| Service | Command | URL |
+|---------|---------|-----|
+| Backend | `python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000` | http://localhost:8000/docs |
+| Frontend | `cd frontend && npm run dev` | http://localhost:3000 |
+
 ---
 
 ## 🗂 Project Structure
@@ -204,12 +330,23 @@ chikitsak/
 ├── backend/
 │   ├── app/
 │   │   ├── main.py              # FastAPI app entry point
+│   │   ├── middleware.py         # CORS + Response wrapper
 │   │   ├── routes/
 │   │   │   ├── auth.py          # /auth/login, /auth/register
-│   │   │   └── chat.py          # POST /chat (AI triage)
+│   │   │   ├── chat.py          # POST /chat (dual-mode AI)
+│   │   │   ├── users.py         # /users/me, health summary
+│   │   │   ├── predict.py       # /predict/* (image ML)
+│   │   │   ├── lab.py           # /lab/analyze
+│   │   │   └── drug.py          # /drug/check
 │   │   ├── services/
-│   │   │   ├── auth_service.py  # JWT token handling
-│   │   │   └── ai_engine.py     # Gemini AI + MedQuAD integration
+│   │   │   ├── auth_service.py  # JWT + bcrypt
+│   │   │   ├── chat_service.py  # Dual-mode chatbot engine
+│   │   │   └── ai_engine.py     # ML model orchestration
+│   │   ├── ml/                  # ML engines (lazy-loaded)
+│   │   │   ├── medquad_engine.py
+│   │   │   ├── mental_engine.py
+│   │   │   ├── triage_infer.py
+│   │   │   └── severity_engine.py
 │   │   └── models/              # SQLAlchemy models
 │   └── tests/                   # API tests
 ├── frontend/
@@ -219,42 +356,26 @@ chikitsak/
 │   │   │   ├── login/           # Login page
 │   │   │   ├── signup/          # Multi-step signup
 │   │   │   └── app/             # Authenticated app pages
-│   │   │       ├── workspace/   # AI Chat workspace
+│   │   │       ├── workspace/   # AI Chat workspace (3-panel)
 │   │   │       ├── dashboard/   # Health dashboard
-│   │   │       └── ...          # 20+ more pages
-│   │   ├── components/          # Navbar, Sidebar, Footer, etc.
+│   │   │       ├── location-health/
+│   │   │       ├── nutrition/
+│   │   │       ├── mental-health/
+│   │   │       └── ...          # 15+ more pages
+│   │   ├── components/          # Navbar, Sidebar, Footer, DisclaimerModal
 │   │   ├── store/               # Zustand global state
 │   │   └── locales/             # en.json, hi.json, mr.json
 │   └── public/                  # Static assets, logo
+├── training/                    # ML model training scripts
+├── datasets/                    # (excluded from git — 16GB)
+├── models/                      # (excluded from git — 35GB)
 ├── docs/
-│   ├── screenshots/             # All UI screenshots
-│   ├── demo_walkthrough.webp    # Landing page demo video
+│   ├── screenshots/             # UI screenshots
 │   └── app_demo.webp            # Full app demo video
 ├── .gitignore
+├── requirements.txt
 └── README.md
 ```
-
----
-
-## 🌍 Supported Languages
-
-| Language | Code | Status |
-|----------|------|--------|
-| English | `en` | ✅ Complete |
-| Hindi (हिंदी) | `hi` | ✅ Complete |
-| Marathi (मराठी) | `mr` | ✅ Complete |
-
----
-
-## 🔑 API Endpoints
-
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| `POST` | `/auth/register` | Register new user | ❌ |
-| `POST` | `/auth/login` | Login & get JWT token | ❌ |
-| `POST` | `/chat` | Send message to AI health engine | ✅ Bearer |
-| `GET` | `/health/triage` | Symptom triage analysis | ✅ Bearer |
-| `GET` | `/docs` | Swagger API documentation | ❌ |
 
 ---
 
