@@ -14,7 +14,6 @@
   <img src="https://img.shields.io/badge/Python-3.11+-blue?logo=python" />
   <img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript" />
   <img src="https://img.shields.io/badge/Gemini_AI-API-4285F4?logo=google" />
-  <img src="https://img.shields.io/badge/License-MIT-green" />
 </p>
 
 ---
