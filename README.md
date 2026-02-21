@@ -20,6 +20,14 @@
 
 ## 📹 Demo Video
 
+
+
+https://github.com/user-attachments/assets/1eded125-bfd5-42ec-929e-534510aad79f
+
+
+
+
+
 > Full walkthrough showing landing page, login, AI chat workspace, emergency detection, dashboard, and more.
 
 <p align="center">
