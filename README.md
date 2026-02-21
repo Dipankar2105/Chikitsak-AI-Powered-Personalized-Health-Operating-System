@@ -37,7 +37,7 @@ https://github.com/user-attachments/assets/1eded125-bfd5-42ec-929e-534510aad79f
 </p>
 
 <p align="center">
-  <strong>▶ <a href="https://youtu.be/JO4dhjSGl1w">Watch the full demo on YouTube</a></strong>
+  <strong>▶ <a href="https://youtu.be/JO4dhjSGl1w">Watch the full demo on YouTube</a> &nbsp;|&nbsp; <a href="https://github.com/Dipankar2105/Chikitsak-AI-Powered-Personalized-Health-Operating-System/blob/main/demo_sped2x_better_quality.mp4">Watch demo video on GitHub</a></strong>
 </p>
 
 ---
@@ -436,3 +436,4 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 <p align="center">
   Made with ❤️ for accessible healthcare
 </p>
+
