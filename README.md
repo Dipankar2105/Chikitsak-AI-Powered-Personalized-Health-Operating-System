@@ -20,12 +20,10 @@
 
 ## 📹 Demo Video
 
-> Full walkthrough showing landing page, login, AI chat workspace, dashboard, and more.
+> Full walkthrough showing landing page, login, AI chat workspace, emergency detection, dashboard, and more.
 
 <p align="center">
-  <a href="https://youtu.be/JO4dhjSGl1w">
-    <img src="https://img.youtube.com/vi/JO4dhjSGl1w/maxresdefault.jpg" alt="Chikitsak AI Demo Video" width="800"/>
-  </a>
+  <img src="docs/app_demo.webp" alt="Chikitsak AI Demo" width="800"/>
 </p>
 
 <p align="center">
