@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="frontend/public/logo.png" alt="Chikitsak AI Logo" width="400"/>
+  <img src="frontend/public/logo.png" alt="Chikitsak AI Logo?autoplay=1&mute=1" width="400"/>
 </p>
 
 <h1 align="center">Chikitsak AI — Personalized Health Operating System</h1>
