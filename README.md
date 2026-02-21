@@ -23,9 +23,9 @@
 > Full walkthrough showing landing page, login, AI chat workspace, emergency detection, dashboard, and more.
 
 <p align="center">
- 
-
-[![Watch the Demo](https://img.youtube.com/vi/tgbNymZ7vqY/0.jpg)](https://www.youtube.com/watch?v=tgbNymZ7vqY)
+  <a href="https://www.youtube.com/watch?v=tgbNymZ7vqY">
+    <img src="docs/screenshots/01_hero_section.png" width="800"/>
+  </a>
 </p>
 
 <p align="center">
