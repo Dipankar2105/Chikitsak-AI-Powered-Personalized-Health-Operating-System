@@ -23,9 +23,16 @@
 > Full walkthrough showing landing page, login, AI chat workspace, emergency detection, dashboard, and more.
 
 <p align="center">
-  <iframe width="420" height="315"
-src="https://www.youtube.com/embed/tgbNymZ7vqY">
-</iframe>
+  ```html
+<div>
+  <iframe 
+    width="560" 
+    height="315" 
+    src="https://www.youtube.com/embed/tgbNymZ7vqY" 
+    frameborder="0" 
+    allowfullscreen>
+  </iframe>
+</div>
 </p>
 
 <p align="center">
