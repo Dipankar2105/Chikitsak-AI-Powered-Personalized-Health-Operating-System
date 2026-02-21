@@ -23,7 +23,9 @@
 > Full walkthrough showing landing page, login, AI chat workspace, emergency detection, dashboard, and more.
 
 <p align="center">
-  <img src="docs/app_demo.webp" alt="Chikitsak AI Demo" width="800"/>
+  <iframe width="420" height="315"
+src="https://www.youtube.com/embed/tgbNymZ7vqY">
+</iframe>
 </p>
 
 <p align="center">
