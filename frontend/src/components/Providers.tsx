@@ -4,6 +4,7 @@ import { ReactNode, useEffect } from 'react';
 import i18n from '@/lib/i18n';
 import { ToastProvider } from '@/context/ToastContext';
 import { useAppStore } from '@/store/useAppStore';
+import { I18nextProvider } from 'react-i18next';
 
 export default function Providers({ children }: { children: ReactNode }) {
     const language = useAppStore((s) => s.language);
@@ -16,8 +17,10 @@ export default function Providers({ children }: { children: ReactNode }) {
     }, [language]);
 
     return (
-        <ToastProvider>
-            {children}
-        </ToastProvider>
+        <I18nextProvider i18n={i18n}>
+            <ToastProvider>
+                {children}
+            </ToastProvider>
+        </I18nextProvider>
     );
 }

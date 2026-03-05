@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import { ArrowRight, Heart } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -9,7 +10,7 @@ const areas = [
         key: 'women',
         title: "Women's Health",
         desc: 'Hormonal, reproductive, preventive care.',
-        img: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80',
+        img: '/images/care/female-baldness-treatment_mumbai.webp',
         route: '/care/women',
         requiresAuth: false,
     },
@@ -17,7 +18,7 @@ const areas = [
         key: 'men',
         title: "Men's Health",
         desc: 'Testosterone, heart health, preventive screenings.',
-        img: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=800&q=80',
+        img: '/images/care/average-height-in-men-in-india_900.jpg',
         route: '/care/men',
         requiresAuth: false,
     },
@@ -25,7 +26,7 @@ const areas = [
         key: 'child',
         title: "Child Health",
         desc: 'Growth, vaccination, common childhood conditions.',
-        img: 'https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=800&q=80',
+        img: '/images/care/istockphoto-1667682801-612x612.jpg',
         route: '/care/child',
         requiresAuth: false,
     },
@@ -33,46 +34,47 @@ const areas = [
         key: 'senior',
         title: "Senior Care",
         desc: 'Geriatric health, mobility, chronic care.',
-        img: 'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?auto=format&fit=crop&w=800&q=80',
+        img: '/images/care/istockphoto-1463691216-612x612.jpg',
         route: '/care/senior',
         requiresAuth: false,
     },
     {
-        key: 'pregnancy',
-        title: "Pregnancy & Baby",
-        desc: 'Trimester tracking, fetal growth, post-partum.',
-        img: 'https://images.unsplash.com/photo-1531983412531-1f49a365ff61?auto=format&fit=crop&w=800&q=80',
-        route: '/care/pregnancy',
+        key: 'adult',
+        title: "Adult Health",
+        desc: 'Preventive care, chronic disease management.',
+        img: '/images/care/download.jpg',
+        route: '/care/adult',
         requiresAuth: false,
     },
     {
         key: 'sexual',
         title: "Sexual Health",
         desc: 'Confidential advice, STIs, reproductive health.',
-        img: 'https://images.unsplash.com/photo-1530497610245-94d3c16cda28?auto=format&fit=crop&w=800&q=80',
-        route: '/care/sexual-health',
+        img: '/images/care/indian-couple-embracing-romantic-young-outdoors-39596408.webp',
+        route: '/care/sexual',
         requiresAuth: false,
     },
     {
         key: 'nutrition',
         title: "Nutrition & Diet",
         desc: 'Personalized meal tracking and insights.',
-        img: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=800&q=80',
-        route: '/app/nutrition',
-        requiresAuth: true,
+        img: '/images/care/image-011.jpg',
+        route: '/care/nutrition',
+        requiresAuth: false,
     },
     {
         key: 'mental',
         title: "Mental Health",
         desc: 'Stress, anxiety, mood support.',
-        img: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=800&q=80',
-        route: '/app/mental-health',
-        requiresAuth: true,
+        img: '/images/care/Getty_anxiety_1200.jpg',
+        route: '/care/mental',
+        requiresAuth: false,
     }
 ];
 
 export default function CareAreasGrid() {
     const router = useRouter();
+    const { t } = useTranslation();
     const { isAuthenticated } = useAppStore();
 
     const handleCardClick = (area: typeof areas[0]) => {
@@ -84,77 +86,66 @@ export default function CareAreasGrid() {
     };
 
     return (
-        <section style={{ padding: '80px 24px', maxWidth: 1280, margin: '0 auto' }}>
+        <section className="care-areas-section" style={{ padding: '80px 24px', maxWidth: 1280, margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: 64 }}>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 16px', borderRadius: 99, background: '#F0FDF4', color: '#16A34A', fontSize: 13, fontWeight: 600, marginBottom: 16 }}>
-                    <Heart size={14} fill="#16A34A" /> Holistic Healthcare
+                    <Heart size={14} fill="#16A34A" /> {t('careAreas.holisticBadge')}
                 </div>
                 <h2 style={{ fontSize: 42, fontWeight: 800, marginBottom: 16, color: '#0F172A', letterSpacing: '-1px' }}>
-                    Specialized Care for Everyone
+                    {t('careAreas.title')}
                 </h2>
                 <p style={{ color: '#64748B', fontSize: 18, maxWidth: 640, margin: '0 auto', lineHeight: 1.6 }}>
-                    Expert-curated health modules designed to provide precise guidance for every stage of life.
+                    {t('careAreas.subtitle')}
                 </p>
             </div>
 
-            <div style={{
+            <div className="care-areas-grid" style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                gap: 28,
+                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                gap: 32,
             }}>
                 {areas.map((area) => (
-                    <div key={area.key} onClick={() => handleCardClick(area)} style={{
-                        background: 'white',
-                        borderRadius: 20,
-                        overflow: 'hidden',
-                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                        border: '1px solid #F1F5F9',
-                        display: 'flex', flexDirection: 'column',
-                    }}
-                        onMouseEnter={e => {
-                            e.currentTarget.style.transform = 'translateY(-6px)';
-                            e.currentTarget.style.boxShadow = '0 16px 32px -8px rgba(14, 165, 164, 0.15)';
-                            const img = e.currentTarget.querySelector('.card-img') as HTMLElement;
-                            if (img) img.style.transform = 'scale(1.06)';
-                        }}
-                        onMouseLeave={e => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-                            const img = e.currentTarget.querySelector('.card-img') as HTMLElement;
-                            if (img) img.style.transform = 'scale(1)';
-                        }}
-                    >
-                        <div style={{ height: 180, overflow: 'hidden', position: 'relative' }}>
-                            <div style={{
-                                position: 'absolute', inset: 0, zIndex: 1,
-                                background: 'linear-gradient(to top, rgba(0,0,0,0.25) 0%, transparent 60%)',
-                            }} />
+                    <div key={area.key} onClick={() => handleCardClick(area)} className="care-card shadow-sm hover:shadow-xl transition-all duration-300">
+                        <div className="care-card-img-wrapper" style={{ height: 200, overflow: 'hidden', position: 'relative' }}>
+                            <div className="care-card-img-overlay" />
                             <img
-                                className="card-img"
+                                className="care-card-img"
                                 src={area.img}
                                 alt={area.title}
                                 loading="lazy"
-                                style={{
-                                    width: '100%', height: '100%', objectFit: 'cover',
-                                    transition: 'transform 0.4s ease',
-                                }}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             />
                         </div>
-                        <div style={{ padding: 20, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1E293B', marginBottom: 6 }}>
-                                {area.title}
+                        <div className="care-card-content" style={{ padding: 28, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <h3 className="care-card-title" style={{ fontSize: 20, fontWeight: 700, color: '#1E293B', marginBottom: 12 }}>
+                                {t(`careAreas.items.${area.key}.title`)}
                             </h3>
-                            <p style={{ fontSize: 14, color: '#64748B', lineHeight: 1.5, flex: 1 }}>
-                                {area.desc}
-                            </p>
+
+                            <div style={{ marginBottom: 16 }}>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.5px' }}>Common Concerns</div>
+                                <div style={{ fontSize: 14, color: '#475569', lineHeight: 1.5, display: 'flex', flexWrap: 'wrap', gap: '4px 8px' }}>
+                                    {t(`careAreas.items.${area.key}.problems`).split(', ').map((p, i) => (
+                                        <span key={i} style={{ background: '#F1F5F9', padding: '2px 8px', borderRadius: 6, fontSize: 12 }}>{p}</span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div style={{ marginBottom: 20 }}>
+                                <div style={{ fontSize: 12, fontWeight: 700, color: '#0EA5A4', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.5px' }}>AI-Driven Approach</div>
+                                <p style={{ fontSize: 14, color: '#444', lineHeight: 1.6 }}>
+                                    {t(`careAreas.items.${area.key}.solutions`)}
+                                </p>
+                            </div>
+
                             <div style={{
-                                marginTop: 16, paddingTop: 14, borderTop: '1px solid #F8FAFC',
-                                color: '#0EA5A4', fontWeight: 600, fontSize: 13,
-                                textTransform: 'uppercase', letterSpacing: '0.5px',
+                                marginTop: 'auto', padding: '12px', background: '#F8FAFC', borderRadius: 12,
+                                fontSize: 11, color: '#94A3B8', border: '1px solid #F1F5F9', fontStyle: 'italic'
                             }}>
-                                Explore Module →
+                                ⚕️ Disclaimer: Evidence-based guidance for educational purposes only.
+                            </div>
+
+                            <div className="care-card-footer" style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #F8FAFC', color: '#0EA5A4', fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                {t('common.exploreModule')} <ArrowRight size={16} />
                             </div>
                         </div>
                     </div>

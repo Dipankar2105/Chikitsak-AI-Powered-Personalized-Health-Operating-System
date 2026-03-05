@@ -5,6 +5,13 @@ SEVERITY_PATH = os.path.join(BASE_DIR, "datasets", "triage", "Symptom-severity.c
 
 _severity_map = None
 
+# Symptoms that are always red flags regardless of weight
+RED_FLAG_SYMPTOMS = {
+    "chest_pain", "loss_of_consciousness", "breathlessness",
+    "altered_sensorium", "coma", "internal_itching",
+    "toxic_look_(typhos)", "unsteadiness",
+}
+
 
 def _get_severity_map():
     global _severity_map
@@ -29,23 +36,55 @@ def _get_severity_map():
 
 
 def calculate_severity(symptoms_list):
+    """
+    Calculate severity with standard triage levels and red flag detection.
+
+    Returns:
+        {
+            "total_severity_score": int,
+            "severity_score": int (0-100 normalized),
+            "triage_level": "Self-care" | "Routine" | "Urgent" | "Emergency",
+            "red_flags": list[str],
+        }
+    """
     severity_map = _get_severity_map()
     total_score = 0
-    
-    for symptom in symptoms_list:
-        symptom = symptom.strip().lower()
-        if symptom in severity_map:
-            total_score += severity_map[symptom]
+    red_flags = []
 
-    # Simple triage levels
+    for symptom in symptoms_list:
+        symptom_clean = symptom.strip().lower().replace(" ", "_")
+        if symptom_clean in severity_map:
+            total_score += severity_map[symptom_clean]
+        # Also try without underscores (some datasets use spaces)
+        symptom_space = symptom.strip().lower()
+        if symptom_space in severity_map:
+            total_score += severity_map[symptom_space]
+
+        # Detect red flags
+        if symptom_clean in RED_FLAG_SYMPTOMS:
+            red_flags.append(f"Critical symptom: {symptom.strip()}")
+
+    # Normalize to 0-100
+    # Max reasonable score is ~50 (7 symptoms × ~7 weight each)
+    severity_score = min(100, int((total_score / 50) * 100))
+
+    # Standard triage levels matching hybrid_triage_service expectations
     if total_score <= 5:
-        level = "Mild"
+        level = "Self-care"
     elif total_score <= 12:
-        level = "Moderate"
+        level = "Routine"
+    elif total_score <= 18:
+        level = "Urgent"
     else:
-        level = "High / Emergency"
+        level = "Emergency"
+
+    # Red flags can elevate triage
+    if red_flags and level in ("Self-care", "Routine"):
+        level = "Urgent"
 
     return {
         "total_severity_score": total_score,
-        "triage_level": level
+        "severity_score": severity_score,
+        "triage_level": level,
+        "red_flags": red_flags,
     }

@@ -42,6 +42,7 @@ else:
     print("LOGIN FAIL", resp.status_code, resp.text)
     summary["failed"].append("login")
     token = None
+    user = None
 
 
 # 3) Protected route /users/me

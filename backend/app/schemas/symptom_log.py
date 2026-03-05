@@ -4,7 +4,6 @@ from datetime import datetime
 
 
 class SymptomLogCreate(BaseModel):
-    user_id: int
     symptoms: list[str]
     predicted_disease: Optional[str] = None
     triage_level: Optional[str] = None
@@ -20,4 +19,3 @@ class SymptomLogResponse(BaseModel):
 
     class Config:
         from_attributes = True
-

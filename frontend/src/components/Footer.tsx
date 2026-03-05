@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { useTranslation } from 'react-i18next';
 
 /* Clean SVG social icons */
 function TwitterIcon() {
@@ -48,9 +49,9 @@ const SOCIAL_LINKS = [
 ];
 
 const QUICK_LINKS = [
-    { label: 'Home', href: '/' },
+    { label: 'Home', href: '/#home' },
+    { label: 'Solutions', href: '/#solutions' },
     { label: 'Features', href: '/#features' },
-    { label: 'AI Workspace', href: '/app/workspace' },
     { label: 'Dashboard', href: '/app/dashboard' },
     { label: 'Health Insights', href: '/app/health-insights' },
 ];
@@ -58,11 +59,11 @@ const QUICK_LINKS = [
 const LEGAL_LINKS = [
     { label: 'Privacy Policy', href: '/privacy' },
     { label: 'Terms of Service', href: '/terms' },
-    { label: 'Medical Disclaimer', href: '/disclaimer' },
-    { label: 'Cookie Policy', href: '/cookies' },
+    { label: 'Medical Disclaimer', href: '/#disclaimer' },
 ];
 
 export default function Footer() {
+    const { t } = useTranslation();
     return (
         <footer className="site-footer">
             <div className="footer-inner">
@@ -82,8 +83,7 @@ export default function Footer() {
                             />
                         </div>
                         <p className="footer-brand-text">
-                            Your advanced AI health companion. Providing accessible,
-                            accurate, and personalized healthcare guidance for everyone.
+                            {t('footer.description')}
                         </p>
                         <div className="footer-social-row">
                             {SOCIAL_LINKS.map(social => (
@@ -102,43 +102,43 @@ export default function Footer() {
 
                     {/* Quick Links */}
                     <div>
-                        <h3 className="footer-heading">Quick Links</h3>
+                        <h3 className="footer-heading">{t('footer.quickLinks')}</h3>
                         {QUICK_LINKS.map(link => (
                             <Link key={link.href} href={link.href} className="footer-link">
-                                {link.label}
+                                {t(`footer.links.${link.label.toLowerCase().replace(/ /g, '')}`)}
                             </Link>
                         ))}
                     </div>
 
                     {/* Legal */}
                     <div>
-                        <h3 className="footer-heading">Legal</h3>
+                        <h3 className="footer-heading">{t('footer.legal')}</h3>
                         {LEGAL_LINKS.map(link => (
                             <Link key={link.href} href={link.href} className="footer-link">
-                                {link.label}
+                                {t(`footer.links.${link.label.toLowerCase().replace(/ /g, '')}`)}
                             </Link>
                         ))}
                     </div>
 
                     {/* Contact & Support */}
                     <div>
-                        <h3 className="footer-heading">Support</h3>
-                        <Link href="/contact" className="footer-link">Contact Us</Link>
-                        <Link href="/faq" className="footer-link">FAQ</Link>
-                        <Link href="/help" className="footer-link">Help Center</Link>
-                        <Link href="/feedback" className="footer-link">Feedback</Link>
+                        <h3 className="footer-heading">{t('footer.support')}</h3>
+                        <Link href="/contact" className="footer-link">{t('navbar.contact')}</Link>
+                        <Link href="/faq" className="footer-link">{t('footer.links.faq')}</Link>
+                        <Link href="/help" className="footer-link">{t('footer.links.helpcenter')}</Link>
+                        <Link href="/feedback" className="footer-link">{t('navbar.feedback')}</Link>
                     </div>
                 </div>
 
                 {/* Disclaimer */}
                 <div className="footer-disclaimer">
-                    <strong>Medical Disclaimer:</strong> Chikitsak is an AI-powered educational tool and does not provide medical diagnosis or treatment. Always consult a qualified healthcare professional. In emergencies, call your local emergency services immediately.
+                    <strong>{t('footer.disclaimerTitle')}:</strong> {t('footer.disclaimerContent')}
                 </div>
 
                 {/* Bottom Bar */}
                 <div className="footer-bottom">
-                    <span>© 2026 Chikitsak Health AI. All rights reserved.</span>
-                    <span>Made with ❤️ for better healthcare</span>
+                    <span>{t('footer.copyright')}</span>
+                    <span>{t('footer.madeWith')}</span>
                 </div>
 
             </div>

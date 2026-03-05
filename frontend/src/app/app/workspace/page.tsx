@@ -2,13 +2,14 @@
 
 import { useState, useRef, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/useAppStore';
+import api, { getErrorMessage } from '@/lib/api';
 import ChatHistory from '@/components/ChatHistory';
 import LiveInsightsPanel from '@/components/LiveInsightsPanel';
+import { ChatResponse, ImageAnalysisResponse } from '@/types/api';
 import {
-    Send, Plus, Mic, MicOff, Bot, User, Stethoscope, FileText, Pill,
-    PanelRightOpen, PanelRightClose, Image as ImageIcon, Upload, X, Loader2
+    Send, Plus, Mic, MicOff, Bot, MessageCircle, Stethoscope, FileText, Pill,
+    PanelRightOpen, PanelRightClose, Image as ImageIcon, X, Loader2, Heart
 } from 'lucide-react';
 
 /* ── Typing indicator ── */
@@ -41,16 +42,20 @@ function TypingIndicator() {
 
 /* ── Main Workspace ── */
 function WorkspaceContent() {
-    const { t } = useTranslation();
     const {
         chatSessions, activeChatId, chatMode, setChatMode, addMessage, userProfile,
-        insights, setInsights, triggerEmergency, rightPanelOpen, toggleRightPanel
+        setInsights, triggerEmergency, rightPanelOpen, toggleRightPanel
     } = useAppStore();
     const [input, setInput] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [chatError, setChatError] = useState<string | null>(null);
     const [isListening, setIsListening] = useState(false);
+    const [voiceError, setVoiceError] = useState<string | null>(null);
     const [uploadedImage, setUploadedImage] = useState<string | null>(null);
     const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+    const [attachedLab, setAttachedLab] = useState<boolean>(false);
+    const [attachedWearable, setAttachedWearable] = useState<boolean>(false);
+    const [imageAnalysisType, setImageAnalysisType] = useState<'xray' | 'mri' | 'skin'>('xray');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -72,9 +77,17 @@ function WorkspaceContent() {
         if (modeParam && !processedRef.current) {
             if (modeParam === 'lab') setChatMode('lab' as any);
             if (modeParam === 'medication') setChatMode('medication' as any);
-            if (modeParam === 'image') setChatMode('symptom');
+            if (modeParam === 'image') setChatMode('image');
         }
     }, [modeParam]);
+
+    const normalizeTriageLevel = (triage: string | null | undefined): 'self-care' | 'primary' | 'urgent' | 'emergency' => {
+        const value = (triage || '').toLowerCase();
+        if (value.includes('emergency') || value.includes('critical') || value.includes('high')) return 'emergency';
+        if (value.includes('urgent') || value.includes('moderate')) return 'urgent';
+        if (value.includes('primary') || value.includes('consult')) return 'primary';
+        return 'self-care';
+    };
 
     useEffect(() => {
         if (queryParam && !processedRef.current) {
@@ -96,31 +109,34 @@ function WorkspaceContent() {
 
     const processAIResponse = async (text: string) => {
         setIsTyping(true);
+        setChatError(null);
 
         try {
-            const token = useAppStore.getState().accessToken;
-            // Map frontend chatMode to backend mode
-            const backendMode = chatMode === 'symptom' ? 'health' : chatMode === 'lab' ? 'health' : chatMode === 'medication' ? 'health' : 'health';
-
-            const res = await fetch('http://localhost:8000/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-                },
-                body: JSON.stringify({
-                    message: text,
-                    mode: backendMode,
-                    language: useAppStore.getState().language || 'en',
-                }),
+            const backendMode = chatMode === 'mental' ? 'mental' : 'health';
+            const lang = useAppStore.getState().language || 'en';
+            const response = await api.post<ChatResponse>('/chat', {
+                message: text,
+                mode: backendMode,
+                language: lang,
+                session_id: activeChatId || undefined,
             });
 
-            const json = await res.json();
+            const apiData = response.data as ChatResponse;
+            const payload = apiData?.data;
 
-            if (res.ok && json.data?.response) {
-                const aiResponse = json.data.response;
-                const confidence = json.data.confidence || 0;
-                const riskFlags = json.data.risk_flags || [];
+            if (apiData?.status === 'success' && payload) {
+                const aiResponse = payload.response || apiData?.message || 'Analysis complete.';
+                const confidence = Number(payload.confidence || 0);
+                const riskFlags = Array.isArray(payload.risk_flags) ? payload.risk_flags : [];
+                const triageLevel = normalizeTriageLevel(payload.triage);
+                const nextSteps = Array.isArray(payload.next_steps) ? payload.next_steps : [];
+                const causesRaw = Array.isArray(payload.causes) ? payload.causes : [];
+                const causes = causesRaw.map((c) => ({
+                    name: c?.name || 'Unspecified',
+                    probability: Number(c?.probability ?? 0),
+                    confidence: Number(c?.confidence ?? Math.round(confidence * 100)),
+                    risk: (c?.risk === 'high' || c?.risk === 'medium' || c?.risk === 'low') ? c.risk : 'medium',
+                }));
 
                 if (activeChatId) {
                     addMessage(activeChatId, {
@@ -129,50 +145,68 @@ function WorkspaceContent() {
                         content: aiResponse,
                         timestamp: new Date(),
                     });
-                    setInsights({
+
+                    const insightUpdate = {
                         aiConfidence: Math.round(confidence * 100),
                         redFlags: riskFlags,
-                    });
+                        triageLevel,
+                        ...(causes.length > 0 && { causes }),
+                        ...(nextSteps.length > 0 && { nextSteps }),
+                    };
+                    setInsights(insightUpdate);
                 }
 
-                // Check for emergency flags
                 if (riskFlags.some((f: string) => f.toLowerCase().includes('emergency') || f.toLowerCase().includes('crisis'))) {
                     triggerEmergency();
                 }
             } else {
-                // API returned an error
+                const message = payload?.message || apiData?.message || 'Sorry, I encountered an error processing your request.';
                 if (activeChatId) {
                     addMessage(activeChatId, {
                         id: (Date.now() + 1).toString(),
                         role: 'ai',
-                        content: `⚠️ ${json.message || json.error || 'Sorry, I encountered an error processing your request. Please try again.'}`,
+                        content: `⚠️ ${message}`,
                         timestamp: new Date(),
                     });
                 }
+                setChatError(message);
             }
-        } catch {
-            // Backend unreachable — use fallback response
+        } catch (err) {
+            const message = getErrorMessage(err);
             if (activeChatId) {
                 addMessage(activeChatId, {
                     id: (Date.now() + 1).toString(),
                     role: 'ai',
-                    content: 'I\'m currently unable to reach the health analysis server. Please make sure the backend is running at http://localhost:8000 and try again.',
+                    content: `⚠️ ${message}`,
                     timestamp: new Date(),
                 });
             }
+            setChatError(message);
         }
 
         setIsTyping(false);
     };
-
     const handleSend = () => {
-        if (!input.trim() && !uploadedImage) return;
+        if (!input.trim() && !(chatMode === 'image' && uploadedImage)) return;
         if (!activeChatId) return;
 
-        const content = uploadedImage
-            ? `📷 [Image uploaded: ${uploadedFileName}]\n${input.trim() || 'Please analyze this medical image.'}`
-            : input.trim();
+        if (chatMode === 'image') {
+            if (!uploadedImage) {
+                setChatError('Please upload an image for analysis.');
+                return;
+            }
+            addMessage(activeChatId, {
+                id: Date.now().toString(),
+                role: 'user',
+                content: `[Image uploaded: ${uploadedFileName || 'image'}]`,
+                timestamp: new Date(),
+            });
+            setInput('');
+            handleImageAnalysis();
+            return;
+        }
 
+        const content = input.trim();
         addMessage(activeChatId, {
             id: Date.now().toString(),
             role: 'user',
@@ -181,75 +215,89 @@ function WorkspaceContent() {
         });
 
         setInput('');
-        setUploadedImage(null);
-        setUploadedFileName(null);
-
-        const userInput = content.toLowerCase();
-
-        // Symptom Wizard Logic
-        if (chatMode === 'symptom') {
-            const currentStep = useAppStore.getState().symptomWizardStep;
-
-            if (currentStep === 0 && (userInput.includes('hi') || userInput.includes('hello'))) {
-                setIsTyping(true);
-                setTimeout(() => {
-                    addMessage(activeChatId, {
-                        id: Date.now().toString(),
-                        role: 'ai',
-                        content: "Hello! I'm here to help. Could you tell me what main symptom you are experiencing today?",
-                        timestamp: new Date(),
-                    });
-                    useAppStore.setState({ symptomWizardStep: 1 });
-                    setIsTyping(false);
-                }, 800);
-                return;
-            }
-
-            if (currentStep === 1) {
-                useAppStore.getState().addSymptom(input);
-                processWizardStep(2, "Got it. How long have you been experiencing this? (e.g., 2 days, 1 week)");
-                return;
-            }
-            if (currentStep === 2) {
-                useAppStore.getState().setSymptomDuration(input);
-                processWizardStep(3, "Understood. On a scale of 1-10, how severe is the pain or discomfort?");
-                return;
-            }
-            if (currentStep === 3) {
-                const severity = parseInt(input.match(/\d+/)?.[0] || '5');
-                useAppStore.getState().setSymptomSeverity(severity);
-                processWizardStep(4, "Noted. Are you experiencing any other symptoms like fever, nausea, or dizziness?");
-                return;
-            }
-            if (currentStep === 4) {
-                useAppStore.setState({ symptomWizardStep: 0 });
-                processAIResponse(userInput);
-                return;
-            }
-        }
-
-        processAIResponse(userInput);
+        setAttachedLab(false);
+        setAttachedWearable(false);
+        processAIResponse(content);
     };
 
-    const processWizardStep = (nextStep: number, question: string) => {
+    const handleImageAnalysis = async () => {
+        if (!uploadedImage || !activeChatId) return;
+
         setIsTyping(true);
-        setTimeout(() => {
-            useAppStore.setState({ symptomWizardStep: nextStep });
-            if (activeChatId) {
+        setChatError(null);
+        try {
+            const endpointByType: Record<'xray' | 'mri' | 'skin', string> = {
+                xray: '/predict/xray',
+                mri: '/predict/mri',
+                skin: '/predict/skin',
+            };
+            const endpoint = endpointByType[imageAnalysisType];
+
+            const res = await fetch(uploadedImage);
+            const blob = await res.blob();
+            const file = new File([blob], uploadedFileName || 'upload.png', { type: blob.type || 'image/png' });
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await api.post<ImageAnalysisResponse>(endpoint, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+
+            const apiData = response.data as ImageAnalysisResponse;
+            const payload = apiData?.data;
+
+            if (apiData.status === 'success' && payload) {
+                const confidence = Number(payload.confidence ?? apiData?.message ? 0 : 0.8);
+                const triageLevel = normalizeTriageLevel(payload.risk_level);
                 addMessage(activeChatId, {
                     id: Date.now().toString(),
                     role: 'ai',
-                    content: question,
+                    content: `Analysis Result:\n\nType: ${imageAnalysisType.toUpperCase()}\nPrediction: ${payload.prediction || payload.result || 'N/A'}\nRisk: ${payload.risk_level || 'N/A'}\nRecommendation: ${payload.recommendation || 'N/A'}\nConfidence: ${Math.round(confidence * 100)}%`,
                     timestamp: new Date(),
                 });
+                setInsights({
+                    aiConfidence: Math.round(confidence * 100),
+                    triageLevel,
+                    causes: [
+                        {
+                            name: payload.prediction || 'Image finding',
+                            probability: Math.round(confidence * 100),
+                            confidence: Math.round(confidence * 100),
+                            risk: triageLevel === 'emergency' || triageLevel === 'urgent' ? 'high' : 'medium',
+                        },
+                    ],
+                    nextSteps: payload.recommendation ? [payload.recommendation] : [],
+                });
+            } else {
+                const message = apiData?.message || 'Image analysis failed.';
+                addMessage(activeChatId, {
+                    id: Date.now().toString(),
+                    role: 'ai',
+                    content: `⚠️ ${message}`,
+                    timestamp: new Date(),
+                });
+                setChatError(message);
             }
-            setIsTyping(false);
-        }, 800);
-    };
+        } catch (err) {
+            const message = getErrorMessage(err);
+            addMessage(activeChatId, {
+                id: Date.now().toString(),
+                role: 'ai',
+                content: `⚠️ Image analysis failed: ${message}`,
+                timestamp: new Date(),
+            });
+            setChatError(message);
+        }
 
+        setIsTyping(false);
+        setUploadedImage(null);
+        setUploadedFileName(null);
+    };
     const handleVoiceInput = () => {
+        setVoiceError(null);
         if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-            alert('Voice input is not supported in this browser. Please try Chrome.');
+            setVoiceError('Voice input is not supported in this browser. Please try Chrome or Edge.');
+            setTimeout(() => setVoiceError(null), 5000);
             return;
         }
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -259,16 +307,37 @@ function WorkspaceContent() {
         recognition.interimResults = false;
         recognition.onstart = () => setIsListening(true);
         recognition.onend = () => setIsListening(false);
-        recognition.onerror = () => setIsListening(false);
+        recognition.onerror = (event: any) => {
+            setIsListening(false);
+            setVoiceError(`Voice error: ${event.error || 'Unknown error'}`);
+            setTimeout(() => setVoiceError(null), 5000);
+        };
         recognition.onresult = (event: any) => {
-            const transcript = event.results[0][0].transcript;
-            setInput(prev => prev + (prev ? ' ' : '') + transcript);
+            if (event.results && event.results[0]) {
+                const transcript = event.results[0][0].transcript;
+                setInput(prev => prev + (prev ? ' ' : '') + transcript);
+            }
         };
         if (isListening) {
             recognition.stop();
         } else {
             recognition.start();
         }
+    };
+
+    const validateImageFile = (file: File): string | null => {
+        const maxSize = 5 * 1024 * 1024; // 5MB max
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/tiff', 'application/dicom'];
+
+        if (file.size > maxSize) {
+            return 'Image is too large. Maximum size is 5 MB.';
+        }
+
+        if (!allowedTypes.includes(file.type) && !file.name.match(/\.(jpg|jpeg|png|webp|tiff|dcm)$/i)) {
+            return 'Please upload a valid image (JPG, PNG, WebP, TIFF, or DICOM).';
+        }
+
+        return null;
     };
 
     const handleImageUpload = () => {
@@ -278,6 +347,15 @@ function WorkspaceContent() {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        const validationError = validateImageFile(file);
+        if (validationError) {
+            setVoiceError(validationError);
+            setTimeout(() => setVoiceError(null), 5000);
+            e.target.value = '';
+            return;
+        }
+
         setUploadedFileName(file.name);
         const reader = new FileReader();
         reader.onload = (ev) => {
@@ -291,12 +369,16 @@ function WorkspaceContent() {
         { key: 'symptom' as const, label: 'Symptom', icon: Stethoscope },
         { key: 'lab' as const, label: 'Lab Report', icon: FileText },
         { key: 'medication' as const, label: 'Medication', icon: Pill },
+        { key: 'mental' as const, label: 'Mental Health', icon: MessageCircle },
+        { key: 'image' as const, label: 'Image Analysis', icon: ImageIcon },
     ];
 
     const placeholders: Record<string, string> = {
         symptom: 'Describe your symptoms here...',
         lab: 'Paste lab report values or describe your results...',
         medication: 'Enter medication name to check interactions...',
+        mental: 'Share how you are feeling...',
+        image: 'Upload an image, choose X-Ray/MRI/Skin, then send.',
     };
 
     const userName = userProfile?.name || 'User';
@@ -359,20 +441,22 @@ function WorkspaceContent() {
                         </div>
 
                         {/* Image Upload Button */}
-                        <button
-                            onClick={handleImageUpload}
-                            title="Upload medical image"
-                            style={{
-                                padding: '6px 10px', borderRadius: 8,
-                                border: '1px solid #E2E8F0', cursor: 'pointer',
-                                background: uploadedImage ? '#F0FDFA' : 'white',
-                                color: uploadedImage ? '#0EA5A4' : '#64748B',
-                                display: 'flex', alignItems: 'center', gap: 4,
-                                fontSize: 12, fontWeight: 500,
-                            }}
-                        >
-                            <ImageIcon size={14} /> Image
-                        </button>
+                        {chatMode === 'image' && (
+                            <button
+                                onClick={handleImageUpload}
+                                title="Upload medical image"
+                                style={{
+                                    padding: '6px 10px', borderRadius: 8,
+                                    border: '1px solid #E2E8F0', cursor: 'pointer',
+                                    background: uploadedImage ? '#F0FDFA' : 'white',
+                                    color: uploadedImage ? '#0EA5A4' : '#64748B',
+                                    display: 'flex', alignItems: 'center', gap: 4,
+                                    fontSize: 12, fontWeight: 500,
+                                }}
+                            >
+                                <ImageIcon size={14} /> Image
+                            </button>
+                        )}
 
                         {/* Toggle Right Panel */}
                         <button onClick={toggleRightPanel} style={{
@@ -384,12 +468,47 @@ function WorkspaceContent() {
                     </div>
                 </div>
 
+                {chatMode === 'image' && (
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '10px 20px',
+                        borderBottom: '1px solid #F1F5F9',
+                        background: '#FFFFFF',
+                    }}>
+                        {(['xray', 'mri', 'skin'] as const).map((type) => (
+                            <button
+                                key={type}
+                                onClick={() => setImageAnalysisType(type)}
+                                style={{
+                                    padding: '6px 10px',
+                                    borderRadius: 8,
+                                    border: '1px solid #E2E8F0',
+                                    cursor: 'pointer',
+                                    background: imageAnalysisType === type ? '#F0FDFA' : '#FFFFFF',
+                                    color: imageAnalysisType === type ? '#0EA5A4' : '#64748B',
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                }}
+                            >
+                                {type === 'xray' ? 'X-Ray' : type === 'mri' ? 'MRI' : 'Skin'}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
                 {/* Messages */}
-                <div style={{
-                    flex: 1, overflowY: 'auto', padding: '24px 20px',
-                    display: 'flex', flexDirection: 'column', gap: 16,
-                    background: '#FAFBFC',
-                }}>
+                <div
+                    role="log"
+                    aria-label="Chat messages"
+                    aria-live="polite"
+                    aria-atomic="false"
+                    style={{
+                        flex: 1, overflowY: 'auto', padding: '24px 20px',
+                        display: 'flex', flexDirection: 'column', gap: 16,
+                        background: '#FAFBFC',
+                    }}>
                     {activeChat?.messages.map((msg) => (
                         <div key={msg.id} style={{
                             display: 'flex',
@@ -452,60 +571,109 @@ function WorkspaceContent() {
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* Image Preview */}
-                {uploadedImage && (
-                    <div style={{
-                        padding: '10px 20px', background: '#F0FDFA',
-                        borderTop: '1px solid #CCFBF1',
-                        display: 'flex', alignItems: 'center', gap: 12,
-                    }}>
+                {/* Attachments Preview */}
+                <div style={{ display: 'flex', gap: 12, padding: (uploadedImage || attachedLab || attachedWearable) ? '10px 20px' : '0 20px', flexWrap: 'wrap' }}>
+                    {uploadedImage && (
                         <div style={{
-                            width: 56, height: 56, borderRadius: 10, overflow: 'hidden',
-                            border: '2px solid #0EA5A4', flexShrink: 0,
+                            padding: '6px 12px 6px 6px', background: '#F0FDFA', borderRadius: 99,
+                            border: '1px solid #CCFBF1', display: 'flex', alignItems: 'center', gap: 8,
                         }}>
-                            <img src={uploadedImage} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <div style={{ width: 24, height: 24, borderRadius: '50%', overflow: 'hidden' }}>
+                                <img src={uploadedImage} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            </div>
+                            <span style={{ fontSize: 13, color: '#0F766E' }}>{uploadedFileName}</span>
+                            <button onClick={() => { setUploadedImage(null); setUploadedFileName(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}><X size={14} color="#94A3B8" /></button>
                         </div>
-                        <div style={{ flex: 1, fontSize: 13, color: '#0F766E' }}>
-                            📎 {uploadedFileName}
+                    )}
+                    {attachedLab && (
+                        <div style={{
+                            padding: '6px 12px', background: '#EFF6FF', borderRadius: 99,
+                            border: '1px solid #BFDBFE', display: 'flex', alignItems: 'center', gap: 8,
+                        }}>
+                            <FileText size={16} color="#2563EB" />
+                            <span style={{ fontSize: 13, color: '#1E40AF', fontWeight: 500 }}>Latest Lab Panel</span>
+                            <button onClick={() => setAttachedLab(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}><X size={14} color="#94A3B8" /></button>
                         </div>
-                        <button
-                            onClick={() => { setUploadedImage(null); setUploadedFileName(null); }}
-                            style={{
-                                padding: 6, borderRadius: 8, border: 'none',
-                                background: 'white', cursor: 'pointer', color: '#94A3B8',
-                            }}
-                        >
-                            <X size={16} />
-                        </button>
-                    </div>
-                )}
+                    )}
+                    {attachedWearable && (
+                        <div style={{
+                            padding: '6px 12px', background: '#FEF2F2', borderRadius: 99,
+                            border: '1px solid #FECACA', display: 'flex', alignItems: 'center', gap: 8,
+                        }}>
+                            <Heart size={16} color="#DC2626" />
+                            <span style={{ fontSize: 13, color: '#991B1B', fontWeight: 500 }}>Apple Watch Vitals</span>
+                            <button onClick={() => setAttachedWearable(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}><X size={14} color="#94A3B8" /></button>
+                        </div>
+                    )}
+                </div>
 
                 {/* Input Area */}
                 <div style={{ padding: '16px 20px', borderTop: '1px solid #F1F5F9', background: 'white' }}>
+                    {voiceError && (
+                        <div style={{
+                            background: '#FEE2E2', border: '1px solid #FECACA', color: '#991B1B',
+                            padding: '8px 12px', borderRadius: 8, marginBottom: 12, fontSize: 12,
+                        }}>
+                            ⚠️ {voiceError}
+                        </div>
+                    )}
                     <div style={{
                         display: 'flex', alignItems: 'center', gap: 10,
                         background: '#F8FAFC', padding: '6px 6px 6px 14px', borderRadius: 16,
                         border: '1px solid #E2E8F0',
                     }}>
-                        {/* Attachment */}
-                        <button
-                            onClick={handleImageUpload}
-                            style={{
-                                padding: 7, borderRadius: 8, border: 'none',
-                                background: 'white', cursor: 'pointer', color: '#64748B',
-                                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            }}
-                        >
-                            <Plus size={16} />
-                        </button>
-
+                        {/* Multimodal Attachments */}
+                        <div style={{ display: 'flex', gap: 4 }}>
+                            <button
+                                onClick={handleImageUpload}
+                                aria-label="Upload medical image"
+                                title="Attach Image"
+                                style={{
+                                    padding: 7, borderRadius: 8, border: 'none',
+                                    background: uploadedImage ? '#F0FDFA' : 'white',
+                                    cursor: 'pointer', color: uploadedImage ? '#0EA5A4' : '#64748B',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    transition: 'background 0.2s'
+                                }}
+                            >
+                                <ImageIcon size={18} aria-hidden="true" />
+                            </button>
+                            <button
+                                onClick={() => setAttachedLab(!attachedLab)}
+                                aria-label="Attach latest lab report"
+                                title="Attach Labs"
+                                style={{
+                                    padding: 7, borderRadius: 8, border: 'none',
+                                    background: attachedLab ? '#EFF6FF' : 'white',
+                                    cursor: 'pointer', color: attachedLab ? '#2563EB' : '#64748B',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    transition: 'background 0.2s'
+                                }}
+                            >
+                                <FileText size={18} aria-hidden="true" />
+                            </button>
+                            <button
+                                onClick={() => setAttachedWearable(!attachedWearable)}
+                                aria-label="Sync wearable data"
+                                title="Attach Vitals"
+                                style={{
+                                    padding: 7, borderRadius: 8, border: 'none',
+                                    background: attachedWearable ? '#FEF2F2' : 'white',
+                                    cursor: 'pointer', color: attachedWearable ? '#DC2626' : '#64748B',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    transition: 'background 0.2s'
+                                }}
+                            >
+                                <Heart size={18} aria-hidden="true" />
+                            </button>
+                        </div>
                         {/* Text Input */}
                         <input
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
                             placeholder={placeholders[chatMode] || 'Type your message...'}
+                            aria-label={`Enter your ${chatMode} query`}
                             style={{
                                 flex: 1, border: 'none', background: 'transparent',
                                 fontSize: 14, outline: 'none', color: '#1E293B',
@@ -515,6 +683,8 @@ function WorkspaceContent() {
                         {/* Voice Input */}
                         <button
                             onClick={handleVoiceInput}
+                            aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+                            aria-pressed={isListening}
                             style={{
                                 padding: 7, borderRadius: 8, border: 'none',
                                 background: isListening ? '#FEE2E2' : 'transparent',
@@ -524,24 +694,32 @@ function WorkspaceContent() {
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}
                         >
-                            {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+                            {isListening ? <MicOff size={18} aria-hidden="true" /> : <Mic size={18} aria-hidden="true" />}
                         </button>
 
                         {/* Send Button */}
-                        <button onClick={handleSend} style={{
-                            width: 38, height: 38, borderRadius: 12, flexShrink: 0,
-                            background: (input.trim() || uploadedImage)
-                                ? 'linear-gradient(135deg, #0EA5A4, #4F46E5)'
-                                : '#E2E8F0',
-                            border: 'none',
-                            cursor: (input.trim() || uploadedImage) ? 'pointer' : 'default',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: 'white', transition: 'all 0.2s',
-                            boxShadow: (input.trim() || uploadedImage) ? '0 4px 12px rgba(14,165,164,0.25)' : 'none',
-                        }}>
-                            <Send size={16} />
+                        <button onClick={handleSend}
+                            aria-label="Send message"
+                            disabled={!input.trim() && !(chatMode === 'image' && uploadedImage)}
+                            style={{
+                                width: 38, height: 38, borderRadius: 12, flexShrink: 0,
+                                background: (input.trim() || (chatMode === 'image' && uploadedImage))
+                                    ? 'linear-gradient(135deg, #0EA5A4, #4F46E5)'
+                                    : '#E2E8F0',
+                                border: 'none',
+                                cursor: (input.trim() || (chatMode === 'image' && uploadedImage)) ? 'pointer' : 'default',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: 'white', transition: 'all 0.2s',
+                                boxShadow: (input.trim() || (chatMode === 'image' && uploadedImage)) ? '0 4px 12px rgba(14,165,164,0.25)' : 'none',
+                            }}>
+                            <Send size={16} aria-hidden="true" />
                         </button>
                     </div>
+                    {chatError && (
+                        <div style={{ marginTop: 8, fontSize: 12, color: '#DC2626' }}>
+                            {chatError}
+                        </div>
+                    )}
                     <div style={{ textAlign: 'center', marginTop: 8 }}>
                         <p style={{ fontSize: 11, color: '#94A3B8' }}>
                             AI can make mistakes. Please verify important medical information.
@@ -574,3 +752,5 @@ export default function WorkspacePage() {
         </Suspense>
     );
 }
+
+

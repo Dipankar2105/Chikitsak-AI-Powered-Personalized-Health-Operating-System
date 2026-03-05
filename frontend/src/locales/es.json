@@ -6,9 +6,13 @@
         "features": "Características",
         "conditions": "Condiciones",
         "about": "Acerca de",
+        "solutions": "Nuestras Soluciones",
         "login": "Iniciar sesión",
         "signup": "Registrarse",
-        "language": "Idioma"
+        "language": "Idioma",
+        "signOut": "Cerrar sesión",
+        "notifications": "Notificaciones",
+        "noNotifications": "No hay nuevas notificaciones"
     },
     "hero": {
         "title": "Tu Compañero de Salud con IA",

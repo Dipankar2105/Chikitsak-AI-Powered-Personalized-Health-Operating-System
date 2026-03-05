@@ -1,20 +1,29 @@
 'use client';
 
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import HeroSection from '@/components/HeroSection';
 import CareAreasGrid from '@/components/CareAreasGrid';
-import TestimonialsSection from '@/components/TestimonialsSection';
-import CommunityReviews from '@/components/CommunityReviews';
+import FeedbackSection from '@/components/FeedbackSection';
+import ContactSection from '@/components/ContactSection';
 import { ArrowRight, CheckCircle2, Bot, Activity, ShieldCheck, Brain, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
+import { useAppStore } from '@/store/useAppStore';
+import { useEffect } from 'react';
 
 export default function HomePage() {
   const router = useRouter();
+  const { t } = useTranslation();
+  const { isAuthenticated } = useAppStore();
+  // Redirect to dashboard if logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/app/dashboard');
+    }
+  }, [isAuthenticated, router]);
 
   return (
     <>
-      <Navbar />
       <main style={{ background: '#F8FAFC' }}>
         {/* 1. Hero Section */}
         <div id="home">
@@ -35,27 +44,29 @@ export default function HomePage() {
                 padding: '8px 16px', borderRadius: 99, background: '#F0FDFA', color: '#0EA5A4',
                 fontSize: 14, fontWeight: 600, marginBottom: 24, border: '1px solid #CCFBF1'
               }}>
-                <Bot size={18} /> About Chikitsak
+                <Bot size={18} /> {t('about.badge')}
               </div>
               <h2 style={{ fontSize: 42, fontWeight: 800, color: '#0F172A', marginBottom: 20, lineHeight: 1.2 }}>
-                Your Personal <br />
-                <span style={{ color: '#0EA5A4' }}>AI Health Assistant</span>
+                {t('about.titlePart1')} <br />
+                <span style={{ color: '#0EA5A4' }}>{t('about.titlePart2')}</span>
               </h2>
               <p style={{ fontSize: 18, color: '#64748B', lineHeight: 1.7, marginBottom: 32 }}>
-                Experience the future of healthcare with our advanced AI triage engine.
-                Get instant analysis of your symptoms, personalized care plans, and
-                real-time health insights — all in one platform.
+                {t('about.description')}
               </p>
               <ul style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 40, listStyle: 'none', padding: 0 }}>
-                {['Instant Symptom Triage', 'Personalized Health Score', 'Smart Medication Reminders'].map(item => (
-                  <li key={item} style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 16, color: '#334155', fontWeight: 500 }}>
-                    <CheckCircle2 size={20} color="#0EA5A4" /> {item}
+                {[
+                  'about.features.triage',
+                  'about.features.score',
+                  'about.features.meds'
+                ].map(key => (
+                  <li key={key} style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 16, color: '#334155', fontWeight: 500 }}>
+                    <CheckCircle2 size={20} color="#0EA5A4" /> {t(key)}
                   </li>
                 ))}
               </ul>
               <button onClick={() => router.push('/app/workspace')} className="btn-gradient"
                 style={{ padding: '16px 32px', fontSize: 16, borderRadius: 12, display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-                Try AI Workspace <ArrowRight size={20} />
+                {t('about.cta')} <ArrowRight size={20} />
               </button>
             </div>
 
@@ -64,19 +75,20 @@ export default function HomePage() {
                 position: 'relative', borderRadius: 24, overflow: 'hidden',
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)',
                 border: '1px solid #E2E8F0',
+                background: '#F8FAFC'
               }}>
                 <img
-                  src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80"
-                  alt="AI Dashboard Interface"
-                  style={{ width: '100%', display: 'block' }}
+                  src="/images/about_hero.png"
+                  alt="Professional doctor using AI diagnostic system"
+                  style={{ width: '100%', display: 'block', minHeight: 400, objectFit: 'cover' }}
                 />
                 <div style={{
-                  position: 'absolute', bottom: 40, left: -20,
+                  position: 'absolute', bottom: 40, left: 20,
                   background: 'white', padding: 20, borderRadius: 16,
                   boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
                   border: '1px solid #F1F5F9',
                   display: 'flex', alignItems: 'center', gap: 16,
-                  maxWidth: 260
+                  maxWidth: 260, zIndex: 2
                 }}>
                   <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#DEF7EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Activity color="#0EA5A4" />
@@ -100,23 +112,23 @@ export default function HomePage() {
               background: '#EEF2FF', color: '#6366F1',
               fontSize: 13, fontWeight: 600, marginBottom: 20,
             }}>
-              <Zap size={14} /> Platform Features
+              <Zap size={14} /> {t('features.badge')}
             </div>
             <h2 style={{ fontSize: 36, fontWeight: 800, color: '#0F172A', marginBottom: 16 }}>
-              Everything You Need for Better Health
+              {t('features.title')}
             </h2>
             <p style={{ fontSize: 16, color: '#64748B', maxWidth: 600, margin: '0 auto 56px', lineHeight: 1.6 }}>
-              Powered by AI, designed with care. Explore our comprehensive healthcare features.
+              {t('features.subtitle')}
             </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
               {[
-                { icon: Bot, title: 'AI Symptom Checker', desc: 'Describe symptoms and get instant AI triage with severity assessment and recommended next steps.', color: '#0EA5A4' },
-                { icon: Activity, title: 'Health Dashboard', desc: 'Track your vitals, health score, and trends over time with beautiful visualizations.', color: '#6366F1' },
-                { icon: ShieldCheck, title: 'Drug Interaction Check', desc: 'Check medication interactions, dosages, and food guidelines with AI precision.', color: '#F59E0B' },
-                { icon: Brain, title: 'Mental Wellness', desc: 'Mood tracking, guided meditation, CBT exercises, and a supportive chatbot companion.', color: '#EC4899' },
-                { icon: CheckCircle2, title: 'Lab Report Analysis', desc: 'Upload lab reports for instant AI interpretation with flagged abnormalities and trends.', color: '#22C55E' },
-                { icon: Zap, title: 'Location Health Alerts', desc: 'Real-time AQI, trending illnesses, and seasonal health risks based on your city.', color: '#EF4444' },
+                { key: 'symptom', icon: Bot, color: '#0EA5A4' },
+                { key: 'dashboard', icon: Activity, color: '#6366F1' },
+                { key: 'meds', icon: ShieldCheck, color: '#F59E0B' },
+                { key: 'mental', icon: Brain, color: '#EC4899' },
+                { key: 'lab', icon: CheckCircle2, color: '#22C55E' },
+                { key: 'location', icon: Zap, color: '#EF4444' },
               ].map((feature, i) => {
                 const Icon = feature.icon;
                 return (
@@ -136,8 +148,8 @@ export default function HomePage() {
                     }}>
                       <Icon size={24} color={feature.color} />
                     </div>
-                    <h3 style={{ fontSize: 17, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>{feature.title}</h3>
-                    <p style={{ fontSize: 14, color: '#64748B', lineHeight: 1.6 }}>{feature.desc}</p>
+                    <h3 style={{ fontSize: 17, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>{t(`features.items.${feature.key}.title`)}</h3>
+                    <p style={{ fontSize: 14, color: '#64748B', lineHeight: 1.6 }}>{t(`features.items.${feature.key}.desc`)}</p>
                   </div>
                 );
               })}
@@ -145,11 +157,11 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 5. Community Reviews */}
-        <CommunityReviews />
+        {/* 5. Feedback Section */}
+        <FeedbackSection />
 
-        {/* 6. Testimonials */}
-        <TestimonialsSection />
+        {/* 6. Contact Section */}
+        <ContactSection />
 
       </main>
       <Footer />

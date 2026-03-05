@@ -1,26 +1,24 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Apple, AlertTriangle, Droplets, Flame, Beef, Plus, Upload, X, Camera } from 'lucide-react';
+import { Apple, AlertTriangle, Droplets, Flame, Beef, Plus, Upload, X, Camera, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-
-const macroData = [
-    { name: 'Carbs', value: 50, color: '#0EA5A4' },
-    { name: 'Protein', value: 25, color: '#6366F1' },
-    { name: 'Fat', value: 25, color: '#F59E0B' },
-];
+import api, { getErrorMessage } from '@/lib/api';
+import PlanGuard from '@/components/PlanGuard';
 
 export default function NutritionPage() {
+    return (
+        <PlanGuard requireTier="pro">
+            <NutritionContent />
+        </PlanGuard>
+    );
+}
+
+function NutritionContent() {
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [meals, setMeals] = useState([
-        { time: '8:00 AM', name: 'Oatmeal with fruits', calories: 350, type: 'Breakfast' },
-        { time: '10:30 AM', name: 'Greek yogurt', calories: 150, type: 'Snack' },
-        { time: '1:00 PM', name: 'Grilled chicken salad', calories: 450, type: 'Lunch' },
-        { time: '4:00 PM', name: 'Mixed nuts', calories: 200, type: 'Snack' },
-        { time: '7:30 PM', name: 'Dal with rice & veggies', calories: 550, type: 'Dinner' },
-    ]);
+    const [meals, setMeals] = useState<any[]>([]);
 
     const [showAddForm, setShowAddForm] = useState(false);
     const [newFood, setNewFood] = useState('');
@@ -28,17 +26,33 @@ export default function NutritionPage() {
     const [newType, setNewType] = useState('Snack');
     const [uploadedImage, setUploadedImage] = useState<string | null>(null);
     const [analyzing, setAnalyzing] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
+    const [loadingHistory, setLoadingHistory] = useState(true);
+
+    // Load meal history from API
+    useEffect(() => {
+        api.get('/nutrition/history?days=1')
+            .then(res => {
+                const envelope = res.data;
+                if (envelope.status === 'success' && Array.isArray(envelope.data)) {
+                    const data = envelope.data;
+                    setMeals(data.map((m: any) => ({
+                        time: m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '',
+                        name: m.food_name,
+                        calories: m.calories || 0,
+                        type: 'Meal',
+                    })));
+                }
+            })
+            .catch(() => { })
+            .finally(() => setLoadingHistory(false));
+    }, []);
 
     const totalCalories = meals.reduce((sum, m) => sum + m.calories, 0);
     const goalCalories = 2000;
 
-    const dailyData = [
-        { time: '8 AM', calories: 350 },
-        { time: '10 AM', calories: 150 },
-        { time: '1 PM', calories: 450 },
-        { time: '4 PM', calories: 200 },
-        { time: '7 PM', calories: 550 },
-    ];
+    const dailyData = meals.map(m => ({ time: m.time, calories: m.calories }));
 
     const macros = [
         { label: 'Carbohydrates', current: 210, goal: 250, unit: 'g', color: '#0EA5A4' },
@@ -47,35 +61,77 @@ export default function NutritionPage() {
         { label: 'Fiber', current: 18, goal: 30, unit: 'g', color: '#22C55E' },
     ];
 
-    const handleAddFood = () => {
+    const handleAddFood = async () => {
         if (!newFood.trim() || !newCalories.trim()) return;
+        setSaving(true);
+        setError('');
         const now = new Date();
         const time = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-        setMeals(prev => [...prev, { time, name: newFood, calories: parseInt(newCalories), type: newType }]);
+        const entry = { time, name: newFood, calories: parseInt(newCalories), type: newType };
+
+        try {
+            await api.post('/nutrition/log', {
+                food_name: newFood,
+                calories: parseInt(newCalories),
+                meal_type: newType.toLowerCase(),
+            });
+        } catch {
+            // Still add locally even if backend fails
+        }
+
+        setMeals(prev => [...prev, entry]);
         setNewFood('');
         setNewCalories('');
         setShowAddForm(false);
+        setSaving(false);
     };
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        // Show preview
         const reader = new FileReader();
-        reader.onload = (ev) => {
-            setUploadedImage(ev.target?.result as string);
-            setAnalyzing(true);
-            setTimeout(() => {
-                setAnalyzing(false);
+        reader.onload = (ev) => setUploadedImage(ev.target?.result as string);
+        reader.readAsDataURL(file);
+
+        // Call real food prediction API
+        setAnalyzing(true);
+        setError('');
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await api.post('/predict/food', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            const envelope = res.data;
+            if (envelope.status === 'success' && envelope.data) {
+                const result = envelope.data;
+                const foodName = result.prediction || 'Unknown food';
+                const nutrition = result.nutrition;
+
                 setMeals(prev => [...prev, {
                     time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
-                    name: '📸 Detected: Mixed bowl (rice, dal, veggies)',
-                    calories: 480,
-                    type: 'Lunch',
+                    name: `📸 ${foodName}`,
+                    calories: nutrition?.calories || 0,
+                    type: 'Detected',
                 }]);
-                setUploadedImage(null);
-            }, 2000);
-        };
-        reader.readAsDataURL(file);
+
+                // Also log to nutrition history
+                await api.post('/nutrition/log', {
+                    food_name: foodName,
+                    calories: nutrition?.calories || null,
+                    protein: nutrition?.protein || null,
+                    carbs: nutrition?.carbs || null,
+                    fats: nutrition?.fat || null,
+                }).catch(() => { });
+            }
+        } catch (err) {
+            setError('Food detection failed. Try adding manually.');
+        } finally {
+            setAnalyzing(false);
+            setUploadedImage(null);
+        }
         e.target.value = '';
     };
 
@@ -218,8 +274,8 @@ export default function NutritionPage() {
                     <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 20 }}>{t('nutritionModule.macros')}</h3>
                     <ResponsiveContainer width="100%" height={220}>
                         <PieChart>
-                            <Pie data={macroData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} dataKey="value" label={({ name, value }) => `${name} ${value}%`}>
-                                {macroData.map((entry, index) => (<Cell key={index} fill={entry.color} />))}
+                            <Pie data={macros.map(m => ({ name: m.label, value: m.current, color: m.color }))} cx="50%" cy="50%" innerRadius={55} outerRadius={90} dataKey="value" label={({ name, value }: any) => `${name} ${value}g`}>
+                                {macros.map((entry, index) => (<Cell key={index} fill={entry.color} />))}
                             </Pie>
                             <Tooltip />
                         </PieChart>

@@ -191,3 +191,117 @@ def get_current_user(
         )
 
     return user
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# Password Validation & Reset
+# ─────────────────────────────────────────────────────────────────────────
+
+def validate_password_strength(password: str) -> tuple[bool, str]:
+    """
+    Validate password meets minimum security requirements.
+    
+    Returns: (is_valid, error_message)
+    """
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters"
+    if not any(c.isupper() for c in password):
+        return False, "Password must contain at least one uppercase letter"
+    if not any(c.islower() for c in password):
+        return False, "Password must contain at least one lowercase letter"
+    if not any(c.isdigit() for c in password):
+        return False, "Password must contain at least one number"
+    if not any(c in "!@#$%^&*()-_=+[]{}|;:',.<>?/" for c in password):
+        return False, "Password must contain at least one special character"
+    return True, ""
+
+
+def generate_password_reset_token() -> str:
+    """Generate a secure reset token."""
+    return secrets.token_urlsafe(32)
+
+
+def create_password_reset_token(db: Session, user_id: int, token_lifetime_hours: int = 1) -> str:
+    """
+    Create a password reset token for a user.
+    Old tokens are invalidated.
+    """
+    from backend.app.models.password_reset_token import PasswordResetToken
+    
+    # Invalidate old tokens
+    db.query(PasswordResetToken).filter(
+        PasswordResetToken.user_id == user_id,
+        PasswordResetToken.is_used == False
+    ).update({"is_used": True})
+    
+    # Create new token
+    token = generate_password_reset_token()
+    reset_token = PasswordResetToken(
+        user_id=user_id,
+        token=token,
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=token_lifetime_hours)
+    )
+    db.add(reset_token)
+    db.commit()
+    
+    logger.info("Password reset token created for user id=%d", user_id)
+    return token
+
+
+def validate_password_reset_token(db: Session, token: str) -> tuple[bool, User | None]:
+    """
+    Validate a password reset token.
+    
+    Returns: (is_valid, user) or (False, None) if invalid
+    """
+    from backend.app.models.password_reset_token import PasswordResetToken
+    
+    reset_token = db.query(PasswordResetToken).filter(
+        PasswordResetToken.token == token
+    ).first()
+    
+    if not reset_token:
+        return False, None
+    
+    if not reset_token.is_valid():
+        return False, None
+    
+    user = reset_token.user
+    return True, user
+
+
+def reset_password(db: Session, token: str, new_password: str) -> tuple[bool, str]:
+    """
+    Reset user password using reset token.
+    
+    Returns: (success, message)
+    """
+    from backend.app.models.password_reset_token import PasswordResetToken
+    
+    # Validate token
+    is_valid, user = validate_password_reset_token(db, token)
+    if not is_valid or not user:
+        return False, "Invalid or expired reset token"
+    
+    # Validate new password
+    is_strong, error = validate_password_strength(new_password)
+    if not is_strong:
+        return False, error
+    
+    # Update password
+    user.password_hash = hash_password(new_password)
+    user.failed_login_attempts = 0  # Reset login attempts
+    user.account_locked = False
+    user.account_locked_until = None
+    
+    # Mark token as used
+    reset_token = db.query(PasswordResetToken).filter(
+        PasswordResetToken.token == token
+    ).first()
+    reset_token.is_used = True
+    reset_token.used_at = datetime.now(timezone.utc)
+    
+    db.commit()
+    logger.info("Password reset for user id=%d", user.id)
+    return True, "Password reset successful"
+

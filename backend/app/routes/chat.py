@@ -1,11 +1,9 @@
 """
-Chat Routes — Dual-mode chatbot endpoint.
-
-POST /chat  →  Health Assistant or Mental Health Therapist
-GET  /chat/history  →  Retrieve chat history for current user
+Chat Routes.
 """
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from typing import Optional, Literal
 from sqlalchemy.orm import Session
@@ -30,10 +28,12 @@ class ChatRequest(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    mode: str
+    status: str
     response: str
     confidence: float
-    risk_flags: list[str] = []
+    triage: str
+    causes: list[dict] = []
+    next_steps: list[str] = []
     session_id: str
 
 
@@ -54,12 +54,6 @@ def chat(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Send a chat message.
-
-    - **mode=health**: General health questions, medicine suggestions, treatment guidance.
-    - **mode=mental**: Empathetic responses, crisis detection, escalation support.
-    """
     logger.info(
         "Chat request from user %d | mode=%s | lang=%s",
         current_user.id, payload.mode, payload.language,
@@ -73,6 +67,8 @@ def chat(
         language=payload.language,
         session_id=payload.session_id,
     )
+    if result.get("status") == "error":
+        return JSONResponse(status_code=500, content=result)
     return result
 
 

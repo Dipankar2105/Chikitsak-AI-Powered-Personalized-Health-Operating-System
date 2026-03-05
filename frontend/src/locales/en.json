@@ -3,10 +3,11 @@
   "tagline": "AI Powered Personalized Health Operating System",
   "nav": {
     "home": "Home",
-    "features": "Features",
-    "conditions": "Conditions",
-    "about": "About",
     "solutions": "Our Solutions",
+    "features": "Features",
+    "about": "About",
+    "feedback": "Feedback",
+    "contact": "Contact Us",
     "login": "Log In",
     "signup": "Sign Up",
     "language": "Language",
@@ -14,27 +15,155 @@
     "notifications": "Notifications",
     "noNotifications": "No new notifications"
   },
+  "navbar": {
+    "home": "Home",
+    "solutions": "Our Solutions",
+    "features": "Features",
+    "about": "About",
+    "feedback": "Feedback",
+    "contact": "Contact Us"
+  },
+  "footer": {
+    "description": "Chikitsak is your AI-powered personalized health operating system, providing intelligent insights and proactive care guidance.",
+    "quickLinks": "Quick Links",
+    "legal": "Legal",
+    "support": "Support",
+    "disclaimerTitle": "Medical Disclaimer",
+    "disclaimerContent": "Chikitsak is an AI-powered educational tool and does not provide medical diagnosis or treatment. Always consult a qualified healthcare professional. In emergencies, call your local emergency services immediately.",
+    "copyright": "© 2026 Chikitsak AI. All rights reserved.",
+    "madeWith": "Made with ❤️ for a healthier world",
+    "links": {
+      "home": "Home",
+      "features": "Features",
+      "aiworkspace": "AI Workspace",
+      "dashboard": "Dashboard",
+      "healthinsights": "Health Insights",
+      "privacypolicy": "Privacy Policy",
+      "termsofservice": "Terms of Service",
+      "medicaldisclaimer": "Medical Disclaimer",
+      "cookiepolicy": "Cookie Policy",
+      "faq": "FAQ",
+      "helpcenter": "Help Center"
+    }
+  },
+  "features": {
+    "badge": "Platform Features",
+    "title": "Everything You Need for Better Health",
+    "subtitle": "Powered by AI, designed with care. Explore our comprehensive healthcare features.",
+    "items": {
+      "symptom": {
+        "title": "AI Symptom Checker",
+        "desc": "Describe symptoms and get instant AI triage with severity assessment and recommended next steps."
+      },
+      "dashboard": {
+        "title": "Health Dashboard",
+        "desc": "Track your vitals, health score, and trends over time with beautiful visualizations."
+      },
+      "meds": {
+        "title": "Drug Interaction Check",
+        "desc": "Check medication interactions, dosages, and food guidelines with AI precision."
+      },
+      "mental": {
+        "title": "Mental Wellness",
+        "desc": "Mood tracking, guided meditation, CBT exercises, and a supportive chatbot companion."
+      },
+      "lab": {
+        "title": "Lab Report Analysis",
+        "desc": "Upload lab reports for instant AI interpretation with flagged abnormalities and trends."
+      },
+      "location": {
+        "title": "Location Health Alerts",
+        "desc": "Real-time AQI, trending illnesses, and seasonal health risks based on your city."
+      }
+    }
+  },
   "hero": {
-    "title": "Your AI Health Companion",
-    "subtitle": "Describe your symptoms, upload medical reports, or explore health insights — powered by intelligent AI.",
-    "placeholder": "Describe your symptoms or upload your medical report…",
+    "titlePrefix": "Your AI",
+    "titleGradient": "Health Companion",
+    "subtitle": "Tell me your symptoms, upload a lab report, or check medication interactions — all powered by intelligent AI.",
+    "activeStatus": "AI Health Companion Active",
+    "clickToUploadImage": "Click to upload medical image for AI analysis...",
+    "placeholders": {
+      "symptom": "Describe your symptoms, e.g. \"I have a severe headache and fever...\"",
+      "lab": "Paste your lab report values or describe them...",
+      "med": "Enter medication name, e.g. \"Metformin 500mg\"..."
+    },
+    "imageAnalysis": "Image Analysis",
     "pills": {
-      "symptom": "Symptom Checker",
-      "lab": "Lab Report Analysis",
-      "medication": "Medication Info"
+      "symptom": "Symptom Check",
+      "lab": "Lab Report",
+      "medication": "Medication"
     }
   },
   "careAreas": {
-    "title": "Explore Care Areas",
-    "subtitle": "Get specialized AI guidance across different health domains",
-    "general": "General Symptoms",
-    "mental": "Mental Health",
-    "nutrition": "Nutrition & Diet",
-    "child": "Child Health",
-    "women": "Women's Health",
-    "men": "Men's Health",
-    "senior": "Senior Care",
-    "medication": "Medication Guidance"
+    "holisticBadge": "Holistic Healthcare",
+    "title": "Specialized Care for Everyone",
+    "subtitle": "Expert-curated health modules designed to provide precise guidance for every stage of life.",
+    "items": {
+      "women": {
+        "title": "Women's Health",
+        "desc": "Hormonal, reproductive, preventive care.",
+        "problems": "PCOS, Hormonal imbalance, Iron deficiency, Thyroid disorders",
+        "solutions": "Cycle tracking, Nutritional planning, AI risk detection, Preventive screenings"
+      },
+      "men": {
+        "title": "Men's Health",
+        "desc": "Testosterone, heart health, preventive screenings.",
+        "problems": "Testosterone imbalance, Cardiovascular risk, Mental stress, Metabolic syndrome",
+        "solutions": "AI-based risk assessment, Personalized health scoring, Evidence-based lifestyle recommendations, Screening reminders"
+      },
+      "child": {
+        "title": "Child Health",
+        "desc": "Growth, vaccination, common childhood conditions.",
+        "problems": "Developmental delays, Viral infections, Nutritional gaps, Vaccination schedules",
+        "solutions": "Growth monitoring, AI-based symptom triage, Immunization alerts, Pediatric dietary guidance"
+      },
+      "senior": {
+        "title": "Senior Care",
+        "desc": "Geriatric health, mobility, chronic care.",
+        "problems": "Osteoarthritis, Cognitive decline, Polypharmacy, Heart failure",
+        "solutions": "Mobility tracking, Cognitive health monitoring, Medication reconciliation, Integrated chronic care"
+      },
+      "pregnancy": {
+        "title": "Pregnancy & Baby",
+        "desc": "Trimester tracking, fetal growth, post-partum.",
+        "problems": "Gestational diabetes, Pre-eclampsia, Newborn jaundice, Postpartum depression",
+        "solutions": "Weekly development tracking, Vitals monitoring, Newborn care AI, Postnatal support"
+      },
+      "sexual": {
+        "title": "Sexual Health",
+        "desc": "Confidential advice, STIs, reproductive health.",
+        "problems": "STIs, Infertility, Sexual dysfunction, Contraceptive awareness",
+        "solutions": "Anonymous screenings, Fertility window tracking, AI clinical guidance, Safe practice educational modules"
+      },
+      "nutrition": {
+        "title": "Nutrition & Diet",
+        "desc": "Personalized meal tracking and insights.",
+        "problems": "B12/D3 deficiency, Weight management, Gut health issues, Type-2 Diabetes",
+        "solutions": "AI Meal analysis, Personalized micro-nutrient scoring, Gut-health optimization, Real-time glucose-aware dieting"
+      },
+      "mental": {
+        "title": "Mental Health",
+        "desc": "Stress, anxiety, mood support.",
+        "problems": "Anxiety disorders, Depression, Chronic stress, Sleep disorders",
+        "solutions": "AI mood tracking, CBT exercises, Guided breathing, Professional referral support"
+      }
+    }
+  },
+  "about": {
+    "badge": "About Chikitsak",
+    "titlePart1": "Your Personal",
+    "titlePart2": "AI Health Assistant",
+    "description": "Experience the future of healthcare with our advanced AI triage engine. Get instant analysis of your symptoms, personalized care plans, and real-time health insights — all in one platform.",
+    "features": {
+      "triage": "Instant Symptom Triage",
+      "score": "Personalized Health Score",
+      "meds": "Smart Medication Reminders"
+    },
+    "cta": "Try AI Workspace"
+  },
+  "common": {
+    "exploreModule": "Explore Module"
   },
   "locationHealth": {
     "title": "Location Health",
@@ -104,14 +233,6 @@
     "title": "What Users Say",
     "subtitle": "Trusted by thousands for personalized healthcare guidance"
   },
-  "footer": {
-    "description": "AI-powered personalized health operating system providing intelligent healthcare guidance.",
-    "product": "Product",
-    "company": "Company",
-    "legal": "Legal",
-    "privacy": "Privacy Policy",
-    "terms": "Terms of Service"
-  },
   "sidebar": {
     "dashboard": "Dashboard",
     "workspace": "AI Workspace",
@@ -127,20 +248,6 @@
     "newChat": "New Chat",
     "today": "Today",
     "yesterday": "Yesterday",
-    "lastWeek": "Last Week",
-    "placeholder": "Type your message...",
-    "send": "Send",
-    "modeSymptom": "Symptom",
-    "modeLab": "Lab",
-    "modeMedication": "Medication"
-  },
-  "insights": {
-    "possibleCauses": "Possible Causes",
-    "triageLevel": "Triage Level",
-    "redFlags": "Red Flags",
-    "nextSteps": "Next Steps",
-    "aiConfidence": "AI Confidence",
-    "emergency": "Emergency",
     "urgent": "Urgent",
     "primaryCare": "Primary Care",
     "selfCare": "Self Care"
@@ -202,5 +309,44 @@
     "privacy": "Privacy & Security",
     "exportData": "Export My Data",
     "deleteData": "Delete All Data"
+  },
+  "support": {
+    "feedback": {
+      "title": "Share Your Experience",
+      "subtitle": "Your feedback helps us improve Chikitsak AI for everyone.",
+      "ratingLabel": "How would you rate your experience?",
+      "commentLabel": "Your comments (Optional)",
+      "placeholder": "Tell us what you liked or what we can improve...",
+      "success": "Thank you for your feedback!",
+      "error": "Failed to send feedback. Please try again.",
+      "submit": "Submit Feedback",
+      "sending": "Sending..."
+    },
+    "contact": {
+      "title": "Get in Touch",
+      "subtitle": "Have questions? Our team is here to help you 24/7.",
+      "infoTitle": "Contact Information",
+      "details": {
+        "email": "Email",
+        "phone": "Phone",
+        "liveChat": "Live Chat",
+        "liveChatDesc": "Available in App"
+      },
+      "form": {
+        "title": "Send a Message",
+        "name": "Name",
+        "email": "Email",
+        "subject": "Subject",
+        "message": "Message",
+        "namePlaceholder": "Your Name",
+        "emailPlaceholder": "your@email.com",
+        "subjectPlaceholder": "How can we help?",
+        "messagePlaceholder": "Your message here...",
+        "success": "Message sent successfully! We will get back to you soon.",
+        "error": "Failed to send message. Please try again.",
+        "submit": "Send Message",
+        "sending": "Sending..."
+      }
+    }
   }
 }

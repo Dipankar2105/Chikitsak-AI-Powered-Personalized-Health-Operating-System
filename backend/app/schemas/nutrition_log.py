@@ -4,7 +4,6 @@ from datetime import datetime
 
 
 class NutritionLogCreate(BaseModel):
-    user_id: int
     food_name: str
     calories: Optional[float] = None
     protein: Optional[float] = None

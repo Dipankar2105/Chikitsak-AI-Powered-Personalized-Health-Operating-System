@@ -8,14 +8,21 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/useAppStore';
 import {
     Menu, X, Globe, ChevronDown, Bell, LogOut, Settings, User, Home,
-    Info, Sparkles, LayoutGrid
+    Info, Sparkles, LayoutGrid, MessageCircle, LayoutDashboard, Brain, Apple, Bot
 } from 'lucide-react';
 
-const NAV_LINKS = [
-    { key: 'home', href: '/', hash: 'home', icon: Home },
-    { key: 'about', href: '/#about', hash: 'about', icon: Info },
-    { key: 'features', href: '/#features', hash: 'features', icon: Sparkles },
-    { key: 'solutions', href: '/#solutions', hash: 'solutions', icon: LayoutGrid },
+const GUEST_LINKS = [
+    { key: 'navbar.home', href: '/#home', hash: 'home', icon: Home },
+    { key: 'navbar.solutions', href: '/#solutions', hash: 'solutions', icon: LayoutGrid },
+    { key: 'navbar.features', href: '/#features', hash: 'features', icon: Sparkles },
+    { key: 'navbar.about', href: '/#about', hash: 'about', icon: Info },
+];
+
+const MEMBER_LINKS = [
+    { key: 'sidebar.dashboard', href: '/app/dashboard', icon: LayoutDashboard },
+    { key: 'sidebar.workspace', href: '/app/workspace', icon: Bot },
+    { key: 'sidebar.mentalHealth', href: '/app/mental-health', icon: Brain },
+    { key: 'sidebar.nutrition', href: '/app/nutrition', icon: Apple },
 ];
 
 const LANGUAGES = [
@@ -32,7 +39,7 @@ export default function Navbar() {
 
     const { t, i18n } = useTranslation();
     const router = useRouter();
-    const { isAuthenticated, userProfile, setAuthenticated, language, setLanguage } = useAppStore();
+    const { isAuthenticated, userProfile, clearAuth, language, setLanguage } = useAppStore();
 
     const langRef = useRef<HTMLDivElement>(null);
     const profileRef = useRef<HTMLDivElement>(null);
@@ -61,7 +68,7 @@ export default function Navbar() {
     };
 
     const handleLogout = () => {
-        setAuthenticated(false);
+        clearAuth();
         router.push('/');
         setProfileOpen(false);
         setMobileOpen(false);
@@ -69,7 +76,7 @@ export default function Navbar() {
 
     const currentLang = LANGUAGES.find(l => l.code === language) || LANGUAGES[0];
 
-    const handleNavClick = (e: React.MouseEvent, link: { key: string; href: string; hash: string; icon: any }) => {
+    const handleNavClick = (e: React.MouseEvent, link: { key: string; href: string; hash: string; icon: React.ComponentType<any> }) => {
         e.preventDefault();
         if (link.hash) {
             // If already on homepage, scroll to section
@@ -92,23 +99,17 @@ export default function Navbar() {
                 <div className="navbar-inner">
 
                     {/* ── Left: Logo ── */}
-                    <Link href="/" className="navbar-brand">
-                        <Image
-                            src="/logo.png"
-                            alt="Chikitsak"
-                            width={160}
-                            height={36}
-                            style={{ borderRadius: 8, objectFit: 'contain' }}
-                            priority
-                        />
+                    <Link href="/" className="navbar-brand" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', textDecoration: 'none', gap: 2 }}>
+                        <div style={{ fontSize: 24, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.5px', lineHeight: 1 }}>Chikitsak AI</div>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: '#0EA5A4', letterSpacing: '0.2px' }}>AI-Powered Preventive Healthcare Intelligence</div>
                     </Link>
 
                     {/* ── Center: Nav Links ── */}
                     <div className="navbar-center">
-                        {NAV_LINKS.map(link => (
+                        {(isAuthenticated ? MEMBER_LINKS : GUEST_LINKS).map(link => (
                             <a key={link.href} href={link.href} className="navbar-link"
-                                onClick={(e) => handleNavClick(e, link)} style={{ cursor: 'pointer' }}>
-                                {t(`nav.${link.key}`)}
+                                onClick={(e) => handleNavClick(e, link as any)} style={{ cursor: 'pointer' }}>
+                                {t(link.key)}
                             </a>
                         ))}
                     </div>
@@ -121,6 +122,9 @@ export default function Navbar() {
                             <button
                                 className="lang-pill"
                                 onClick={() => setLangOpen(!langOpen)}
+                                aria-label="Change language"
+                                aria-expanded={langOpen}
+                                aria-haspopup="menu"
                             >
                                 <Globe size={15} />
                                 {currentLang.label}
@@ -235,8 +239,9 @@ export default function Navbar() {
                     <div className="mobile-nav-overlay open" onClick={() => setMobileOpen(false)} />
                     <div className="mobile-nav-panel">
                         <div className="mobile-nav-header">
-                            <Link href="/" className="navbar-brand" onClick={() => setMobileOpen(false)}>
-                                <Image src="/logo.png" alt="Chikitsak" width={120} height={32} style={{ borderRadius: 8, objectFit: 'contain' }} />
+                            <Link href="/" className="navbar-brand" onClick={() => setMobileOpen(false)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', textDecoration: 'none', gap: 2 }}>
+                                <div style={{ fontSize: 20, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.5px', lineHeight: 1 }}>Chikitsak AI</div>
+                                <div style={{ fontSize: 9, fontWeight: 600, color: '#0EA5A4', letterSpacing: '0.2px' }}>AI-Powered Preventive Healthcare Intelligence</div>
                             </Link>
                             <button className="icon-btn" onClick={() => setMobileOpen(false)}>
                                 <X size={22} />
@@ -244,17 +249,17 @@ export default function Navbar() {
                         </div>
 
                         <div className="mobile-nav-body">
-                            {NAV_LINKS.map(link => {
+                            {(isAuthenticated ? MEMBER_LINKS : GUEST_LINKS).map(link => {
                                 const Icon = link.icon;
                                 return (
                                     <a
                                         key={link.href}
                                         href={link.href}
                                         className="mobile-nav-link"
-                                        onClick={(e) => handleNavClick(e, link)}
+                                        onClick={(e) => handleNavClick(e, link as any)}
                                     >
                                         <Icon size={18} color="#64748B" />
-                                        {t(`nav.${link.key}`)}
+                                        {t(link.key)}
                                     </a>
                                 );
                             })}

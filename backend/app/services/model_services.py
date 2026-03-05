@@ -1,8 +1,46 @@
 from PIL import Image
 import io
+from threading import Lock
 from backend.app.logging_config import get_logger
 
 logger = get_logger("services.model_services")
+
+_preload_done = False
+_preload_lock = Lock()
+
+
+def preload_models_once() -> None:
+    """
+    Load all major ML models exactly once during startup.
+    Safe to call multiple times.
+    """
+    global _preload_done
+    if _preload_done:
+        return
+
+    with _preload_lock:
+        if _preload_done:
+            return
+
+        loaders = [
+            ("xray", "backend.app.services.xray_service", "load_model"),
+            ("mri", "backend.app.services.mri_service", "load_model"),
+            ("skin", "backend.app.services.skin_service", "load_model"),
+            ("food", "backend.app.services.food_service", "load_model"),
+            ("triage", "backend.app.ml_models.triage_infer", "_load_resources"),
+            ("mental", "backend.app.ml_models.mental_engine", "_load_model"),
+            ("medquad", "backend.app.ml_models.medquad_engine", "_load_engine"),
+        ]
+
+        for name, module_path, fn_name in loaders:
+            try:
+                module = __import__(module_path, fromlist=[fn_name])
+                getattr(module, fn_name)()
+                logger.info("Preloaded model: %s", name)
+            except Exception as exc:
+                logger.warning("Model preload skipped for %s: %s", name, exc)
+
+        _preload_done = True
 
 
 def simple_image_heuristic_prediction(image_bytes: bytes) -> dict:

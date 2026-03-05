@@ -3,13 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { useToast } from '@/context/ToastContext';
-import { User, MapPin, Globe, Save, Lock, Mail, Bell } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { User, MapPin, Globe, Save, Lock, Mail, Bell, LogOut, Eye, EyeOff, Loader2, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import api, { getErrorMessage } from '@/lib/api';
 
 export default function SettingsPage() {
     const router = useRouter();
-    const { userProfile, setUserProfile, userLocation, setUserLocation } = useAppStore();
+    const { userProfile, setUserProfile, userLocation, setUserLocation, clearAuth, language, setLanguage, planTier, setPlanTier, ruralMode, setRuralMode } = useAppStore();
     const { showToast } = useToast();
+    const { i18n } = useTranslation();
 
     const [formData, setFormData] = useState({
         name: '',
@@ -30,14 +33,19 @@ export default function SettingsPage() {
                 gender: userProfile.gender || '',
                 city: userProfile.city || userLocation?.split(',')[0] || '',
                 country: userProfile.country || 'India',
-                language: 'en'
+                language: language || 'en'
             });
         }
-    }, [userProfile, userLocation]);
+    }, [userProfile, userLocation, language]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        // Sync language changes immediately
+        if (name === 'language') {
+            i18n.changeLanguage(value);
+            setLanguage(value);
+        }
     };
 
     const handleSave = () => {
@@ -56,6 +64,7 @@ export default function SettingsPage() {
             email: formData.email || userProfile?.email || '',
             existingConditions: userProfile?.existingConditions || [],
             currentMedications: userProfile?.currentMedications || [],
+            planTier: planTier || 'free',
         });
 
         setUserLocation(`${formData.city}, ${formData.country === 'India' ? 'IN' : 'US'}`);
@@ -64,6 +73,38 @@ export default function SettingsPage() {
 
     const handleExport = () => {
         showToast('Data export started. You will receive an email shortly.', 'success');
+    };
+
+    // ── Password Change ──
+    const [passwords, setPasswords] = useState({ current: '', newPass: '', confirm: '' });
+    const [showPasswords, setShowPasswords] = useState(false);
+    const [changingPassword, setChangingPassword] = useState(false);
+
+    const handlePasswordChange = async () => {
+        if (!passwords.current || !passwords.newPass) {
+            showToast('Please fill in all password fields.', 'error');
+            return;
+        }
+        if (passwords.newPass.length < 6) {
+            showToast('New password must be at least 6 characters.', 'error');
+            return;
+        }
+        if (passwords.newPass !== passwords.confirm) {
+            showToast('Passwords do not match.', 'error');
+            return;
+        }
+        setChangingPassword(true);
+        try {
+            await api.post('/auth/change-password', {
+                current_password: passwords.current,
+                new_password: passwords.newPass,
+            });
+            showToast('Password changed successfully!', 'success');
+            setPasswords({ current: '', newPass: '', confirm: '' });
+        } catch (err) {
+            showToast(getErrorMessage(err), 'error');
+        }
+        setChangingPassword(false);
     };
 
     return (
@@ -156,6 +197,42 @@ export default function SettingsPage() {
                     </div>
                 </div>
 
+                {/* Subscription Plan */}
+                <div style={{ background: 'white', borderRadius: 24, padding: 32, border: '1px solid #F1F5F9', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+                    <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1E293B', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Sparkles size={20} color="#6366F1" /> Subscription Plan
+                    </h2>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+                        {[
+                            { id: 'free', label: 'Free', price: '$0', color: '#64748B', features: ['Symptom Checker', 'Basic AI Chat'] },
+                            { id: 'pro', label: 'Pro', price: '$19', color: '#0EA5A4', features: ['Image Analysis', 'Lab Reports', 'Nutrition'] },
+                            { id: 'medical_plus', label: 'Medical+', price: '$49', color: '#6366F1', features: ['Health Twin', 'Risk Prediction', 'Clinical CDSS'] },
+                        ].map(plan => (
+                            <div
+                                key={plan.id}
+                                onClick={() => setPlanTier(plan.id as any)}
+                                style={{
+                                    padding: 20, borderRadius: 16, border: `2px solid ${planTier === plan.id ? plan.color : '#F1F5F9'}`,
+                                    background: planTier === plan.id ? `${plan.color}08` : 'white',
+                                    cursor: 'pointer', transition: 'all 0.2s',
+                                    position: 'relative', textAlign: 'center'
+                                }}
+                            >
+                                {planTier === plan.id && (
+                                    <div style={{ position: 'absolute', top: -10, right: -10, background: plan.color, color: 'white', padding: '2px 8px', borderRadius: 99, fontSize: 10, fontWeight: 800 }}>ACTIVE</div>
+                                )}
+                                <div style={{ fontSize: 14, fontWeight: 700, color: plan.color, marginBottom: 4 }}>{plan.label}</div>
+                                <div style={{ fontSize: 24, fontWeight: 800, color: '#0F172A', marginBottom: 12 }}>{plan.price}<span style={{ fontSize: 12, color: '#94A3B8' }}>/mo</span></div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                    {plan.features.map((f, i) => (
+                                        <div key={i} style={{ fontSize: 11, color: '#64748B' }}>• {f}</div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
                 {/* Data & Privacy */}
                 <div style={{ background: 'white', borderRadius: 24, padding: 32, border: '1px solid #F1F5F9', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
                     <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1E293B', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -167,6 +244,23 @@ export default function SettingsPage() {
                     </p>
                     <button onClick={handleExport} style={{ padding: '10px 20px', borderRadius: 12, border: '1px solid #E2E8F0', background: 'white', color: '#0F172A', fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s' }} className="hover:bg-slate-50">
                         Export My Data
+                    </button>
+                </div>
+
+                {/* Logout */}
+                <div style={{ background: '#FEF2F2', borderRadius: 24, padding: 32, border: '1px solid #FECACA' }}>
+                    <h2 style={{ fontSize: 18, fontWeight: 700, color: '#DC2626', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <LogOut size={20} /> Log Out
+                    </h2>
+                    <p style={{ fontSize: 14, color: '#7F1D1D', marginBottom: 20, lineHeight: 1.5 }}>
+                        This will sign you out of your account and clear your session data.
+                    </p>
+                    <button onClick={() => { clearAuth(); router.push('/'); }} style={{
+                        padding: '10px 24px', borderRadius: 12, border: 'none',
+                        background: '#DC2626', color: 'white', fontWeight: 600,
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
+                    }}>
+                        <LogOut size={16} /> Sign Out
                     </button>
                 </div>
 

@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 # ─────────────────────────────────────────
 # Internal Imports (ALWAYS use backend.app)
@@ -31,7 +32,19 @@ from backend.app.routes import (
     full_health,
     mental,
     chat,
+    dashboard,
+    location,
+    support,
+    image_analysis,
+    health,
 )
+from backend.app.routes import preventive as preventive_route
+from backend.app.routes import health_twin as health_twin_route
+from backend.app.routes import medical_knowledge as medical_knowledge_route
+from backend.app.routes import subscription as subscription_route
+from backend.app.routes import health_score as health_score_route
+from backend.app.routes import medication_adherence as medication_adherence_route
+from backend.app.routes import advanced_health as advanced_health_route
 
 # ─────────────────────────────────────────
 # Logging
@@ -40,8 +53,41 @@ from backend.app.routes import (
 logger = get_logger("main")
 settings = get_settings()
 
+
+def _ensure_sqlite_columns() -> None:
+    """Lightweight schema reconciliation for existing SQLite files."""
+    if "sqlite" not in settings.DATABASE_URL:
+        return
+
+    try:
+        with engine.begin() as conn:
+            # Check users table
+            result = conn.execute(text("PRAGMA table_info(users)")).fetchall()
+            columns = [row[1] for row in result]
+            if "role" not in columns:
+                logger.info("Adding 'role' column to 'users' table")
+                conn.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR DEFAULT 'user'"))
+            if "is_active" not in columns:
+                logger.info("Adding 'is_active' column to 'users' table")
+                conn.execute(text("ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1"))
+            if "plan_tier" not in columns:
+                logger.info("Adding 'plan_tier' column to 'users' table")
+                conn.execute(text("ALTER TABLE users ADD COLUMN plan_tier VARCHAR(20) DEFAULT 'free'"))
+            if "preferred_language" not in columns:
+                logger.info("Adding 'preferred_language' column to 'users' table")
+                conn.execute(text("ALTER TABLE users ADD COLUMN preferred_language VARCHAR(5) DEFAULT 'en'"))
+            if "city" not in columns:
+                logger.info("Adding 'city' column to 'users' table")
+                conn.execute(text("ALTER TABLE users ADD COLUMN city VARCHAR(100)"))
+            if "country" not in columns:
+                logger.info("Adding 'country' column to 'users' table")
+                conn.execute(text("ALTER TABLE users ADD COLUMN country VARCHAR(100)"))
+    except Exception as e:
+        logger.warning(f"Schema reconciliation failed: {e}")
+
+
 # ─────────────────────────────────────────
-# OpenAPI Tag Metadata
+# API Metadata
 # ─────────────────────────────────────────
 
 TAGS_METADATA = [
@@ -75,6 +121,12 @@ async def lifespan(app: FastAPI):
     logger.info("Creating database tables…")
     import backend.app.models  # noqa: F401 – ensure all models register with Base
     Base.metadata.create_all(bind=engine)
+    _ensure_sqlite_columns()
+
+    # Pre-load ML models
+    from backend.app.engine_startup import init_engines
+    init_engines()
+
     logger.info("Chikitsak API is ready")
     yield
     logger.info("Shutting down…")
@@ -117,6 +169,7 @@ app.add_middleware(
 # Routers (ALL registered AFTER app init)
 # ─────────────────────────────────────────
 
+app.include_router(health.router)  # Health checks first
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(symptoms.router)
@@ -135,6 +188,17 @@ app.include_router(drug.router)
 app.include_router(full_health.router)
 app.include_router(mental.router)
 app.include_router(chat.router)
+app.include_router(dashboard.router)
+app.include_router(location.router)
+app.include_router(support.router)
+app.include_router(image_analysis.router)
+app.include_router(preventive_route.router)
+app.include_router(health_twin_route.router)
+app.include_router(medical_knowledge_route.router)
+app.include_router(subscription_route.router)
+app.include_router(health_score_route.router)
+app.include_router(medication_adherence_route.router)
+app.include_router(advanced_health_route.router)
 
 # ─────────────────────────────────────────
 # Root Endpoint

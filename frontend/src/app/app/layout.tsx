@@ -6,9 +6,10 @@ import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import EmergencyOverlay from '@/components/EmergencyOverlay';
 import DisclaimerModal from '@/components/DisclaimerModal';
+// Navbar is now in root layout
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-    const { disclaimerAccepted, acceptDisclaimer, isAuthenticated } = useAppStore();
+    const { disclaimerAccepted, acceptDisclaimer, isAuthenticated, sidebarCollapsed } = useAppStore();
     const [mounted, setMounted] = useState(false);
     const router = useRouter();
     const pathname = usePathname();
@@ -39,10 +40,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         );
     }
 
+    const sidebarWidth = sidebarCollapsed ? 70 : 240;
+
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: '#F8FAFC' }}>
+        <div className="app-shell" style={{ display: 'flex', height: 'calc(100vh - 72px)', overflow: 'hidden' }}>
             <Sidebar />
-            <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <main
+                className="app-main"
+                style={{
+                    marginLeft: sidebarWidth,
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                    height: '100%',
+                    position: 'relative'
+                }}
+            >
                 {children}
             </main>
             <EmergencyOverlay />

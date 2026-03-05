@@ -9,7 +9,7 @@ logger = get_logger("services.xray_service")
 # Configuration
 # ─────────────────────────────────────────────────────────────────────────
 
-MODEL_PATH = Path(Path(__file__).parent.parent.parent.parent, "training", "xray_classifier", "xray_model.pth")
+MODEL_PATH = Path(Path(__file__).parent.parent, "ml_models", "xray_model.pth")
 CLASSES = ["NORMAL", "PNEUMONIA"]
 
 _model_instance = None

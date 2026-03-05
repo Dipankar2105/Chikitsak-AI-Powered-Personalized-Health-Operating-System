@@ -3,9 +3,10 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
+import api, { getErrorMessage } from '@/lib/api';
 import {
     Search, X, ChevronRight, ChevronLeft, AlertTriangle,
-    Activity, Clock, ArrowRight, Bot
+    Activity, Clock, ArrowRight, Bot, Loader2
 } from 'lucide-react';
 
 /* ── Body Region Data ────────────────────────── */
@@ -63,44 +64,16 @@ const levelOfCareOptions = [
     'Not sure',
 ];
 
-/* ── Analysis Data ─────────────────────────────── */
-function getAnalysis(symptoms: string[]) {
-    const txt = symptoms.join(' ').toLowerCase();
-    if (txt.includes('chest pain') || txt.includes('shortness of breath')) {
-        return {
-            conditions: [
-                { name: 'Acute Coronary Syndrome', probability: 35, risk: 'high' as const },
-                { name: 'Costochondritis', probability: 25, risk: 'medium' as const },
-                { name: 'Anxiety/Panic Attack', probability: 20, risk: 'low' as const },
-                { name: 'GERD', probability: 20, risk: 'low' as const },
-            ],
-            triage: 'urgent' as const,
-            confidence: 62,
-        };
-    }
-    if (txt.includes('headache') || txt.includes('fever')) {
-        return {
-            conditions: [
-                { name: 'Viral Infection', probability: 40, risk: 'medium' as const },
-                { name: 'Tension Headache', probability: 30, risk: 'low' as const },
-                { name: 'Sinusitis', probability: 20, risk: 'low' as const },
-                { name: 'Migraine', probability: 10, risk: 'low' as const },
-            ],
-            triage: 'primary' as const,
-            confidence: 72,
-        };
-    }
-    return {
-        conditions: [
-            { name: 'Common Cold', probability: 35, risk: 'low' as const },
-            { name: 'Seasonal Allergies', probability: 25, risk: 'low' as const },
-            { name: 'Viral Infection', probability: 25, risk: 'medium' as const },
-            { name: 'Stress Response', probability: 15, risk: 'low' as const },
-        ],
-        triage: 'self-care' as const,
-        confidence: 58,
-    };
-}
+/* ── Analysis Types ────────────────────────────── */
+type AnalysisCondition = { name: string; probability: number; risk: 'high' | 'medium' | 'low' };
+type AnalysisResult = {
+    conditions: AnalysisCondition[];
+    triage: 'self-care' | 'primary' | 'urgent' | 'emergency';
+    confidence: number;
+    followUpQuestions?: string[];
+    needsMoreInfo?: boolean;
+    message?: string;
+};
 
 /* ── Component ─────────────────────────────────── */
 export default function SymptomStartPage() {
@@ -122,7 +95,9 @@ export default function SymptomStartPage() {
         ).slice(0, 8);
     }, [searchQuery, selectedSymptoms]);
 
-    const analysis = useMemo(() => getAnalysis(selectedSymptoms), [selectedSymptoms]);
+    const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+    const [analyzing, setAnalyzing] = useState(false);
+    const [analysisError, setAnalysisError] = useState('');
     const triageColors = { 'self-care': '#22C55E', primary: '#3B82F6', urgent: '#F59E0B', emergency: '#EF4444' };
 
     /* Context questions based on symptoms */
@@ -429,21 +404,70 @@ export default function SymptomStartPage() {
                             </div>
                         </div>
 
-                        <button onClick={() => setStep(4)} disabled={!duration}
+                        <button onClick={async () => {
+                            setAnalyzing(true);
+                            setAnalysisError('');
+                            try {
+                                const symptomNames = selectedSymptoms.map(s => s.toLowerCase().replace(/ /g, '_'));
+                                const res = await api.post('/symptoms/analyze', {
+                                    symptoms: symptomNames,
+                                    severity,
+                                    duration: duration || undefined,
+                                    context: contextAnswers,
+                                });
+                                const d = res.data?.data || res.data;
+                                // Map backend response to UI format
+                                const triageMap: Record<string, 'self-care' | 'primary' | 'urgent' | 'emergency'> = {
+                                    'Self-care': 'self-care', 'Routine': 'primary',
+                                    'Urgent': 'urgent', 'Emergency': 'emergency',
+                                    'self-care': 'self-care', 'primary': 'primary',
+                                    'urgent': 'urgent', 'emergency': 'emergency',
+                                };
+                                const preds = d.top_predictions || d.possible_conditions || [];
+                                const conditions = preds.length > 0
+                                    ? preds.map((p: any) => ({
+                                        name: p.name || p.disease || 'Unknown',
+                                        probability: Math.round((p.probability || 0) * 100),
+                                        risk: (p.probability || 0) > 0.5 ? 'high' : (p.probability || 0) > 0.2 ? 'medium' : 'low',
+                                    }))
+                                    : d.disease_prediction
+                                        ? [{ name: d.disease_prediction, probability: Math.round((d.confidence || 0.5) * 100), risk: (d.confidence || 0) > 0.7 ? 'high' : 'medium' }]
+                                        : [{ name: 'Analysis pending', probability: 100, risk: 'low' as const }];
+                                setAnalysis({
+                                    conditions,
+                                    triage: triageMap[d.triage_level || d.triage || 'Routine'] || 'primary',
+                                    confidence: Math.round((d.confidence || 0.5) * 100),
+                                    followUpQuestions: d.follow_up_questions || [],
+                                    needsMoreInfo: d.needs_more_info || false,
+                                    message: d.message || d.description || '',
+                                });
+                                setStep(4);
+                            } catch (err) {
+                                setAnalysisError(getErrorMessage(err));
+                            } finally {
+                                setAnalyzing(false);
+                            }
+                        }} disabled={!duration || analyzing}
                             className="btn-gradient"
                             style={{
                                 padding: '14px 32px', fontSize: 15,
-                                opacity: !duration ? 0.4 : 1,
-                                cursor: !duration ? 'not-allowed' : 'pointer',
+                                opacity: (!duration || analyzing) ? 0.4 : 1,
+                                cursor: (!duration || analyzing) ? 'not-allowed' : 'pointer',
+                                display: 'flex', alignItems: 'center', gap: 8,
                             }}>
-                            Analyze Symptoms <ArrowRight size={16} />
+                            {analyzing ? <><Loader2 size={16} className="animate-spin" /> Analyzing...</> : <>Analyze Symptoms <ArrowRight size={16} /></>}
                         </button>
+                        {analysisError && (
+                            <div style={{ marginTop: 12, padding: '12px 16px', borderRadius: 12, background: '#FEF2F2', color: '#DC2626', fontSize: 13 }}>
+                                {analysisError}
+                            </div>
+                        )}
                     </div>
                 </>
             )}
 
             {/* ──────── STEP 4: Analysis Results ──────── */}
-            {step === 4 && (
+            {step === 4 && analysis && (
                 <>
                     <button onClick={() => setStep(3)} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'transparent', border: 'none', cursor: 'pointer', color: '#0EA5A4', fontWeight: 500, fontSize: 14, marginBottom: 20 }}>
                         <ChevronLeft size={16} /> Back

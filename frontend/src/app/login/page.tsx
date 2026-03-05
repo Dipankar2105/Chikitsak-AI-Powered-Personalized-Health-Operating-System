@@ -2,15 +2,16 @@
 
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
-import { Eye, EyeOff, Lock, Mail, ArrowRight, Loader2, ChevronDown, ChevronUp, Shield } from 'lucide-react';
+import api, { getErrorMessage } from '@/lib/api';
+import { Eye, EyeOff, Lock, Mail, ArrowRight, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 
 function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { setAuthenticated, setAccessToken, setUserProfile } = useAppStore();
+    const { setAuthenticated, setAccessToken, setRefreshToken, setUserProfile } = useAppStore();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -33,64 +34,64 @@ function LoginForm() {
         setError('');
 
         try {
-            const res = await fetch('http://localhost:8000/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-            });
-            const json = await res.json();
+            const response = await api.post('/auth/login', { email, password });
+            const result = response.data?.data;
 
-            if (res.ok && json.data?.access_token) {
-                setAccessToken(json.data.access_token);
+            if (result?.access_token) {
+                setAccessToken(result.access_token);
+                setRefreshToken(result.refresh_token || null);
                 setAuthenticated(true);
-                if (json.data.user) {
+                if (result.user) {
                     setUserProfile({
-                        name: json.data.user.name || '',
-                        email: json.data.user.email || email,
-                        age: '', gender: '', city: '', country: '',
-                        existingConditions: [], currentMedications: [],
+                        name: result.user.name || '',
+                        email: result.user.email || email,
+                        age: result.user.age || '',
+                        gender: result.user.gender || '',
+                        city: result.user.city || '',
+                        country: result.user.country || '',
+                        existingConditions: result.user.existing_conditions || [],
+                        currentMedications: result.user.current_medications || [],
+                        planTier: result.user.plan_tier || 'free',
                     });
                 }
                 router.push(redirectPath);
             } else {
-                setError(json.message || json.error || 'Login failed. Please check your credentials.');
+                setError('Unexpected response from server. Please try again.');
                 setLoading(false);
             }
-        } catch {
-            // Backend not reachable — fall back to simulated login for dev
-            setAuthenticated(true);
-            router.push(redirectPath);
+        } catch (err: any) {
+            if (err.response?.status === 404) {
+                setError('Account not found. Please create an account first.');
+                setTimeout(() => router.push(`/signup?redirect=${redirectPath}`), 2000);
+            } else {
+                setError(getErrorMessage(err));
+            }
+            setLoading(false);
         }
     };
 
     return (
         <div style={{ minHeight: '100vh', display: 'flex' }}>
             {/* Left — Illustration Side */}
-            <div style={{
-                flex: 1, background: 'linear-gradient(135deg, #0D9695 0%, #1E1B4B 100%)',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                padding: 48, position: 'relative', overflow: 'hidden',
-            }}>
+            <div className="login-left-panel">
                 {/* Blobs */}
                 <div style={{ position: 'absolute', top: -80, left: -80, width: 300, height: 300, background: '#0EA5A4', opacity: 0.2, filter: 'blur(80px)', borderRadius: '50%' }} />
                 <div style={{ position: 'absolute', bottom: -60, right: -60, width: 250, height: 250, background: '#6366F1', opacity: 0.15, filter: 'blur(60px)', borderRadius: '50%' }} />
 
                 <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 400 }}>
-                    <Image src="/logo.png" alt="Chikitsak" width={200} height={48} style={{ borderRadius: 12, marginBottom: 28, objectFit: 'contain' }} />
                     <h2 style={{ fontSize: 32, fontWeight: 800, color: 'white', marginBottom: 16, lineHeight: 1.2 }}>
-                        Welcome to <br />Chikitsak AI
+                        Welcome to the Future of Preventive Healthcare
                     </h2>
                     <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.75)', lineHeight: 1.7, marginBottom: 32 }}>
-                        Your intelligent health companion. Get instant symptom analysis,
-                        medication checks, and personalized health insights — all in one place.
+                        AI-driven medical intelligence providing symptom analysis, personalized health insights, and evidence-based guidance.
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                        {['AI-Powered Symptom Triage', 'Multi-Language Support', 'Privacy First — Your Data Stays Yours'].map(item => (
+                        {['AI Symptom Analysis', 'Preventive Health Monitoring', 'Personalized Treatment Insights', 'Secure & Private Data'].map(item => (
                             <div key={item} style={{
                                 display: 'flex', alignItems: 'center', gap: 10,
                                 color: 'rgba(255,255,255,0.85)', fontSize: 14, fontWeight: 500,
                             }}>
-                                <Shield size={16} color="#4ADE80" /> {item}
+                                <span style={{ color: '#4ADE80', fontSize: 18 }}>✔</span> {item}
                             </div>
                         ))}
                     </div>
@@ -113,13 +114,17 @@ function LoginForm() {
                     <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                         {/* Email */}
                         <div>
-                            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6 }}>Email Address</label>
+                            <label htmlFor="email-input" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6 }}>Email Address</label>
                             <div style={{ position: 'relative' }}>
-                                <Mail size={18} color="#94A3B8" style={{ position: 'absolute', left: 14, top: 14 }} />
+                                <Mail size={18} color="#94A3B8" style={{ position: 'absolute', left: 14, top: 14 }} aria-hidden="true" />
                                 <input
+                                    id="email-input"
                                     type="email" required value={email}
                                     onChange={(e) => { setEmail(e.target.value); setError(''); }}
                                     placeholder="you@example.com"
+                                    aria-label="Email address"
+                                    aria-invalid={email && !emailValid ? 'true' : 'false'}
+                                    aria-describedby={email && !emailValid ? 'email-error' : undefined}
                                     style={{
                                         width: '100%', padding: '12px 12px 12px 44px', borderRadius: 12,
                                         border: `1px solid ${email && !emailValid ? '#EF4444' : '#E2E8F0'}`,
@@ -130,19 +135,23 @@ function LoginForm() {
                                 />
                             </div>
                             {email && !emailValid && (
-                                <span style={{ fontSize: 12, color: '#EF4444', marginTop: 4, display: 'block' }}>Enter a valid email address</span>
+                                <span id="email-error" style={{ fontSize: 12, color: '#EF4444', marginTop: 4, display: 'block' }} role="alert">Enter a valid email address</span>
                             )}
                         </div>
 
                         {/* Password */}
                         <div>
-                            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6 }}>Password</label>
+                            <label htmlFor="password-input" style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#334155', marginBottom: 6 }}>Password</label>
                             <div style={{ position: 'relative' }}>
-                                <Lock size={18} color="#94A3B8" style={{ position: 'absolute', left: 14, top: 14 }} />
+                                <Lock size={18} color="#94A3B8" style={{ position: 'absolute', left: 14, top: 14 }} aria-hidden="true" />
                                 <input
+                                    id="password-input"
                                     type={showPassword ? "text" : "password"} required value={password}
                                     onChange={(e) => { setPassword(e.target.value); setError(''); }}
                                     placeholder="••••••••"
+                                    aria-label="Password"
+                                    aria-invalid={password && !passwordValid ? 'true' : 'false'}
+                                    aria-describedby={password && !passwordValid ? 'password-error' : undefined}
                                     style={{
                                         width: '100%', padding: '12px 44px 12px 44px', borderRadius: 12,
                                         border: `1px solid ${password && !passwordValid ? '#EF4444' : '#E2E8F0'}`,
@@ -152,16 +161,25 @@ function LoginForm() {
                                     onBlur={(e) => e.target.style.borderColor = password && !passwordValid ? '#EF4444' : '#E2E8F0'}
                                 />
                                 <button type="button" onClick={() => setShowPassword(!showPassword)}
+                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                                     style={{ position: 'absolute', right: 14, top: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}>
-                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
                                 </button>
                             </div>
                             {password && !passwordValid && (
-                                <span style={{ fontSize: 12, color: '#EF4444', marginTop: 4, display: 'block' }}>Password must be at least 6 characters</span>
+                                <span id="password-error" style={{ fontSize: 12, color: '#EF4444', marginTop: 4, display: 'block' }} role="alert">Password must be at least 6 characters</span>
                             )}
                         </div>
 
-                        {error && <div style={{ color: '#EF4444', fontSize: 13, textAlign: 'center', padding: '8px 12px', background: '#FEF2F2', borderRadius: 8 }}>{error}</div>}
+                        {error && (
+                            <div role="alert" style={{
+                                color: '#EF4444', fontSize: 13, textAlign: 'center',
+                                padding: '10px 14px', background: '#FEF2F2', borderRadius: 10,
+                                border: '1px solid #FECACA',
+                            }}>
+                                {error}
+                            </div>
+                        )}
 
                         <button type="submit" disabled={loading} className="btn-gradient"
                             style={{
@@ -171,7 +189,15 @@ function LoginForm() {
                             }}>
                             {loading ? <Loader2 className="animate-spin" size={18} /> : <>Sign In <ArrowRight size={18} /></>}
                         </button>
+
+                        <div style={{ textAlign: 'center', fontSize: 13, color: '#94A3B8', marginTop: 12 }}>
+                            <Link href="/reset-password" style={{ color: '#0EA5A4', fontWeight: 500, textDecoration: 'none' }}>
+                                Forgot password?
+                            </Link>
+                        </div>
                     </form>
+
+
 
                     {/* Disclaimer — Collapsible */}
                     <div style={{ marginTop: 24 }}>
@@ -198,7 +224,7 @@ function LoginForm() {
                     </div>
 
                     <div style={{ marginTop: 24, textAlign: 'center', fontSize: 14, color: '#64748B' }}>
-                        Don't have an account?{' '}
+                        Don&apos;t have an account?{' '}
                         <Link href={`/signup?redirect=${redirectPath}`} style={{ color: '#0EA5A4', fontWeight: 600, textDecoration: 'none' }}>
                             Create Account
                         </Link>

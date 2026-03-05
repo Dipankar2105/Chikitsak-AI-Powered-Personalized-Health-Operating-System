@@ -5,25 +5,30 @@ import { useAppStore } from '@/store/useAppStore';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import {
-    LayoutDashboard, Bot, Brain, Apple, BookOpen,
-    MapPin, FolderHeart, Settings,
+    LayoutDashboard, Bot, Brain, Apple, BookOpen, Stethoscope, ImageIcon, Sparkles, Pill,
+    MapPin, FolderHeart, Settings, Users,
     ChevronLeft, ChevronRight, LogOut
 } from 'lucide-react';
 
 const menuItems = [
     { key: 'dashboard', icon: LayoutDashboard, path: '/app/dashboard' },
+    { key: 'symptoms', icon: Stethoscope, path: '/app/symptoms' },
+    { key: 'medications', icon: Pill, path: '/app/medications' },
     { key: 'workspace', icon: Bot, path: '/app/workspace' },
+    { key: 'imageAnalysis', icon: ImageIcon, path: '/app/image-analysis' },
+    { key: 'healthTwin', icon: Sparkles, path: '/app/health-twin' },
     { key: 'mentalHealth', icon: Brain, path: '/app/mental-health' },
     { key: 'nutrition', icon: Apple, path: '/app/nutrition' },
     { key: 'conditions', icon: BookOpen, path: '/app/conditions' },
     { key: 'locationHealth', icon: MapPin, path: '/app/location-health' },
+    { key: 'population', icon: Users, path: '/app/population' },
     { key: 'myHealth', icon: FolderHeart, path: '/app/records' },
     { key: 'settings', icon: Settings, path: '/app/settings' },
 ];
 
 export default function Sidebar() {
     const { t } = useTranslation();
-    const { sidebarCollapsed, collapseSidebar, expandSidebar, setActivePage, setAuthenticated } = useAppStore();
+    const { sidebarCollapsed, collapseSidebar, expandSidebar, setActivePage, clearAuth } = useAppStore();
     const router = useRouter();
     const pathname = usePathname();
 
@@ -40,19 +45,21 @@ export default function Sidebar() {
     return (
         <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`} style={{ width }}>
 
-            {/* Logo */}
+            {/* Sidebar Toggle/Branding (Minimal) */}
             <div style={{
-                height: 64, display: 'flex', alignItems: 'center',
-                padding: sidebarCollapsed ? '0 16px' : '0 20px',
-                borderBottom: '1px solid #F1F5F9', gap: 10,
+                height: 72, display: 'flex', alignItems: 'center',
+                padding: sidebarCollapsed ? '0 12px' : '0 20px',
+                borderBottom: '1px solid #F1F5F9',
+                justifyContent: 'center'
             }}>
-                <Image
-                    src="/logo.png"
-                    alt="Chikitsak"
-                    width={sidebarCollapsed ? 34 : 140}
-                    height={34}
-                    style={{ borderRadius: 8, flexShrink: 0, objectFit: 'contain' }}
-                />
+                <div style={{
+                    width: 40, height: 40, borderRadius: 12,
+                    background: 'linear-gradient(135deg, #0EA5A4, #2563EB)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'white', fontWeight: 800, fontSize: 20
+                }}>
+                    C
+                </div>
             </div>
 
             {/* Navigation */}
@@ -104,7 +111,7 @@ export default function Sidebar() {
                     {!sidebarCollapsed && 'Collapse'}
                 </button>
                 <button
-                    onClick={() => { setAuthenticated(false); router.push('/'); }}
+                    onClick={() => { clearAuth(); router.push('/'); }}
                     style={{
                         width: '100%',
                         display: 'flex', alignItems: 'center',

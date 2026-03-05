@@ -1,247 +1,280 @@
 """
-Chat Service — Dual-mode chatbot engine.
+Chat service used by /chat.
 
-Mode 1: Health Assistant — general health, medicine suggestions, treatment guidance.
-Mode 2: Mental Health Therapist — empathetic, supportive, crisis detection.
-
-Uses ML engines (medquad, mental, triage) when available, falls back to
-rule-based responses when models are missing.
+Integrated features:
+- Emergency detection and safety override
+- Multi-bot routing (child, adult male, adult female, elderly, mental health)
+- Health mode: unified health orchestrator + hybrid AI
+- Mental mode: mental ML engine + emotional support
+- Hybrid AI: local ML + OpenRouter LLM fallback
 """
 
+from __future__ import annotations
+
+import re
 import uuid
-from datetime import datetime, timezone
+from typing import Any
+
 from sqlalchemy.orm import Session
 
 from backend.app.logging_config import get_logger
 from backend.app.models.chat_history import ChatHistory
+from backend.app.services.health_orchestrator import run_full_health_analysis
+from backend.app.services.safety_system import (
+    detect_emergency,
+    format_emergency_response,
+    should_override_ai_response,
+)
+from backend.app.services.multibot_router import (
+    get_bot_type,
+    get_bot_system_prompt,
+    BotType,
+)
+from backend.app.services.hybrid_triage_service import (
+    predict_disease_with_fallback,
+    calculate_severity_with_hybrid,
+)
+from backend.app.models.user import User
 
 logger = get_logger("services.chat_service")
 
-# ── Crisis keywords for mental-health mode ──────────────────────────────
-CRISIS_KEYWORDS = [
-    "suicide", "suicidal", "kill myself", "end my life", "want to die",
-    "self-harm", "cutting myself", "no reason to live", "overdose",
-    "hurt myself", "ending it all", "don't want to live",
-]
 
-# ── Health emergency keywords ───────────────────────────────────────────
-EMERGENCY_KEYWORDS = [
-    "chest pain", "heart attack", "can't breathe", "breathing difficulty",
-    "unconscious", "severe bleeding", "stroke", "seizure", "anaphylaxis",
-    "choking",
-]
+def _normalize_text(text: str) -> str:
+    return re.sub(r"[^a-z0-9_ ]+", " ", text.lower()).strip()
 
 
-def _detect_crisis(text: str) -> list[str]:
-    """Return list of matched crisis keywords found in text."""
-    lower = text.lower()
-    return [kw for kw in CRISIS_KEYWORDS if kw in lower]
-
-
-def _detect_emergency(text: str) -> list[str]:
-    """Return list of matched emergency keywords found in text."""
-    lower = text.lower()
-    return [kw for kw in EMERGENCY_KEYWORDS if kw in lower]
-
-
-def _health_response(message: str, language: str) -> dict:
+def _extract_symptoms(message: str) -> list[str]:
     """
-    Generate a health assistant response.
-    Tries to use medquad_engine for medical QA, falls back to structured advice.
+    Extract symptom names by matching normalized tokens against triage columns.
     """
-    risk_flags = _detect_emergency(message)
-
-    # Try ML-based medical QA
     try:
-        from backend.app.ml_models.medquad_engine import get_medical_answer
-        result = get_medical_answer(message)
-        if result.get("confidence", 0) > 0.15:
-            response_text = result["answer"]
-            confidence = result["confidence"]
-        else:
-            response_text = _health_fallback(message)
-            confidence = 0.60
-    except Exception as e:
-        logger.warning("medquad_engine unavailable: %s", e)
-        response_text = _health_fallback(message)
-        confidence = 0.60
+        from backend.app.ml_models.triage_infer import _symptom_columns
+    except Exception as exc:
+        logger.error("triage symptom columns unavailable: %s", exc)
+        return []
 
-    if risk_flags:
-        response_text = (
-            "🚨 **EMERGENCY ALERT**: Your symptoms suggest a potentially serious condition. "
-            "Please call emergency services (112/911) immediately.\n\n"
-            "While waiting for help:\n"
-            "- Stay calm and rest\n"
-            "- Do not exert yourself\n"
-            "- Keep your phone nearby\n\n"
-            f"Detected concerns: {', '.join(risk_flags)}\n\n"
-            "---\n\n" + response_text
+    columns = _symptom_columns or []
+    if not columns:
+        return []
+
+    normalized_msg = f" {_normalize_text(message).replace('_', ' ')} "
+    found: list[str] = []
+    for symptom in columns:
+        normalized_symptom = symptom.lower().replace("_", " ")
+        if f" {normalized_symptom} " in normalized_msg:
+            found.append(symptom)
+    return found
+
+
+def _triage_summary(analysis: dict[str, Any]) -> tuple[str, list[dict[str, Any]], list[str]]:
+    triage = analysis.get("health_triage") or {}
+    triage_level = str(triage.get("triage_level") or "unknown")
+    disease = triage.get("disease_prediction")
+    description = triage.get("description")
+    precautions = triage.get("precautions") or []
+
+    clean_precautions = [
+        str(item).strip()
+        for item in precautions
+        if item is not None and str(item).strip() and str(item).strip().lower() != "nan"
+    ]
+
+    causes: list[dict[str, Any]] = []
+    if disease and str(disease).strip().lower() not in {"unknown", "unknown (model unavailable)"}:
+        risk = "medium"
+        low_triage = triage_level.lower()
+        if "emergency" in low_triage or "high" in low_triage:
+            risk = "high"
+        elif "low" in low_triage or "self" in low_triage:
+            risk = "low"
+        causes.append(
+            {
+                "name": str(disease),
+                "probability": 75,
+                "confidence": 75,
+                "risk": risk,
+                "description": description or "",
+            }
         )
-        confidence = 0.95
 
+    response_chunks: list[str] = []
+    if causes:
+        response_chunks.append(f"Possible condition: {causes[0]['name']}")
+    if description:
+        response_chunks.append(description)
+    response_chunks.append(f"Triage level: {triage_level}")
+    if clean_precautions:
+        response_chunks.append("Recommended next steps:")
+        response_chunks.extend([f"{idx + 1}. {step}" for idx, step in enumerate(clean_precautions[:5])])
+
+    response_text = "\n".join(response_chunks).strip() or "Please share more symptoms for better analysis."
+    return response_text, causes, clean_precautions
+
+
+def _get_user_demographics(db: Session, user_id: int) -> dict[str, Any]:
+    """Get user age and gender for bot routing."""
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if user:
+            return {
+                "age": user.age,
+                "gender": user.gender,
+            }
+    except Exception as e:
+        logger.warning("Failed to fetch user demographics: %s", e)
+    
+    return {"age": None, "gender": None}
+
+
+from backend.app.services.chikitsak_engine import ChikitsakEngine
+
+def _health_response(db: Session, user_id: int, message: str, language: str) -> dict[str, Any]:
+    """Health mode chat using the unified Chikitsak Engine."""
+    
+    # 1. Extract symptoms
+    symptoms = _extract_symptoms(message)
+    
+    # 2. Get User Profile for personalized clinical analysis
+    user_profile = {}
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if user:
+            user_profile = {
+                "age": user.age,
+                "gender": user.gender,
+                "existing_conditions": user.existing_conditions or [],
+            }
+            # Merge with medical profile if exists
+            if user.medical_profile:
+                mp = user.medical_profile
+                user_profile.update({
+                    "height_cm": mp.height_cm,
+                    "weight_kg": mp.weight_kg,
+                    "activity_level": mp.activity_level,
+                    "chronic_conditions": mp.chronic_conditions or [],
+                    "family_history": mp.family_history or [],
+                })
+    except Exception as e:
+        logger.warning("Could not fetch user profile for engine: %s", e)
+
+    # 3. Run through Chikitsak Engine
+    analysis = ChikitsakEngine.analyze_health_query(user_id, message, symptoms, user_profile)
+    
+    # 3. Format response based on engine output
+    if analysis.get("is_emergency"):
+        return {
+            "status": "success",
+            "response": "\n".join(analysis["nextSteps"]),
+            "confidence": analysis["aiConfidence"],
+            "triage": "Emergency",
+            "causes": [{"name": "Emergency", "risk": "critical", "description": analysis["reasoning"]}],
+            "next_steps": analysis["nextSteps"],
+            "risk_flags": ["emergency"]
+        }
+
+    # Handle insufficient symptoms
+    if analysis.get("needsMoreInfo"):
+        response_text = analysis["reasoning"] or "I need a bit more information for a reliable analysis."
+        if analysis["followUpQuestions"]:
+            response_text += "\n\n**Please answer these follow-up questions:**\n"
+            response_text += "\n".join([f"• {q}" for q in analysis["followUpQuestions"]])
+            
+        return {
+            "status": "success",
+            "response": response_text,
+            "confidence": analysis["aiConfidence"],
+            "triage": analysis["triageLevel"],
+            "causes": [],
+            "next_steps": ["Answer follow-up questions"],
+            "risk_flags": ["needs_more_info"],
+            "follow_up_questions": analysis["followUpQuestions"]
+        }
+
+    # Standard healthy/triage response
+    disease = analysis["possibleConditions"][0] if analysis["possibleConditions"] else "General Query"
     return {
-        "response": response_text,
-        "confidence": round(confidence, 2),
-        "risk_flags": risk_flags,
+        "status": "success",
+        "response": f"Based on your symptoms, the most likely condition is **{disease}**. \n\nReasoning: {analysis['reasoning']}",
+        "confidence": analysis["aiConfidence"],
+        "triage": analysis["triageLevel"],
+        "causes": [
+            {
+                "name": disease,
+                "probability": int(analysis["aiConfidence"] * 100),
+                "confidence": int(analysis["aiConfidence"] * 100),
+                "risk": "high" if analysis["triageLevel"] in ["Emergency", "Urgent"] else "medium",
+                "description": analysis["reasoning"],
+            }
+        ],
+        "next_steps": analysis["nextSteps"],
+        "risk_flags": [],
+        "model_used": "chikitsak_v1_engine"
     }
 
 
-def _health_fallback(message: str) -> str:
-    """Rule-based health response when ML models are unavailable."""
-    lower = message.lower()
+def _mental_response(db: Session, user_id: int, message: str) -> dict[str, Any]:
+    """Mental health mode chat using specialized mental engine."""
+    
+    # Crisis Detection (Emergency)
+    crisis_keywords = ["suicide", "suicidal", "kill myself", "self-harm", "hurt myself", "end my life"]
+    message_lc = message.lower()
+    if any(kw in message_lc for kw in crisis_keywords):
+        return {
+            "status": "success",
+            "response": "I'm very concerned about what you're sharing. Please, you don't have to carry this alone. Help is available right now.",
+            "confidence": 0.99,
+            "triage": "Emergency",
+            "causes": [{"name": "Crisis", "risk": "critical", "description": "Self-harm/Suicide risk detected"}],
+            "next_steps": ["Call 988 (USA)", "Call AASRA (India: 9820466726)", "Go to nearest hospital"],
+            "risk_flags": ["priority_crisis"]
+        }
 
-    if any(w in lower for w in ["headache", "head pain", "migraine"]):
-        return (
-            "Based on your description, here are some suggestions:\n\n"
-            "**Possible causes:** Tension headache, migraine, dehydration, stress\n\n"
-            "**Recommended actions:**\n"
-            "1. Rest in a quiet, dark room\n"
-            "2. Stay hydrated — drink water\n"
-            "3. Consider OTC pain relief (paracetamol/ibuprofen)\n"
-            "4. Apply a cold compress to your forehead\n\n"
-            "⚠️ Seek medical attention if: headache is sudden and severe, "
-            "accompanied by fever, stiff neck, confusion, or vision changes."
-        )
-    elif any(w in lower for w in ["fever", "temperature", "hot"]):
-        return (
-            "**Fever Management Guidance:**\n\n"
-            "1. Monitor your temperature every 4 hours\n"
-            "2. Stay well hydrated (water, clear fluids)\n"
-            "3. Rest and avoid strenuous activity\n"
-            "4. Consider paracetamol for comfort\n"
-            "5. Wear light, breathable clothing\n\n"
-            "⚠️ Seek medical attention if: fever exceeds 103°F (39.4°C), "
-            "lasts more than 3 days, or is accompanied by severe symptoms."
-        )
-    elif any(w in lower for w in ["cold", "cough", "sore throat", "runny nose"]):
-        return (
-            "**Common Cold / Upper Respiratory Symptoms:**\n\n"
-            "1. Get plenty of rest\n"
-            "2. Drink warm fluids (tea, soup, warm water with honey)\n"
-            "3. Gargle with salt water for sore throat\n"
-            "4. Use a humidifier if available\n"
-            "5. OTC decongestants may help\n\n"
-            "⚠️ See a doctor if: symptoms worsen after 7-10 days, "
-            "you have difficulty breathing, or develop a high fever."
-        )
-    elif any(w in lower for w in ["stomach", "nausea", "vomiting", "diarrhea"]):
-        return (
-            "**Gastrointestinal Symptom Guidance:**\n\n"
-            "1. Stay hydrated — small sips of water or ORS\n"
-            "2. Follow the BRAT diet (bananas, rice, applesauce, toast)\n"
-            "3. Avoid dairy, fatty, or spicy foods\n"
-            "4. Rest your stomach — eat light meals\n\n"
-            "⚠️ Seek medical attention if: you see blood, have severe abdominal pain, "
-            "or cannot keep fluids down for 24 hours."
-        )
-    elif any(w in lower for w in ["medicine", "medication", "drug", "tablet", "pill"]):
-        return (
-            "I can help with medication information. Please provide:\n\n"
-            "1. The name of the medication\n"
-            "2. Your existing conditions (if any)\n"
-            "3. Other medications you're taking\n\n"
-            "⚠️ Always consult a doctor or pharmacist before starting, "
-            "stopping, or changing any medication."
-        )
-    else:
-        return (
-            "Thank you for sharing your health concern. To provide better guidance, "
-            "could you please tell me:\n\n"
-            "1. What specific symptoms are you experiencing?\n"
-            "2. How long have you had these symptoms?\n"
-            "3. On a scale of 1-10, how severe are they?\n"
-            "4. Do you have any existing medical conditions?\n\n"
-            "This information will help me give you more accurate advice.\n\n"
-            "⚠️ *This is AI-generated health information for educational purposes only. "
-            "It does not replace professional medical advice.*"
-        )
-
-
-def _mental_response(message: str, language: str) -> dict:
-    """
-    Generate a mental-health therapist response.
-    Empathetic tone, crisis detection, escalation flags.
-    """
-    risk_flags = _detect_crisis(message)
-
-    # Try ML-based emotion analysis
     try:
-        from backend.app.ml_models.mental_engine import analyze_mental_state
+        from backend.app.ml_models.mental_engine import analyze_mental_state, get_therapeutic_response
+        
+        # 1. Detect Mood/Emotion
         analysis = analyze_mental_state(message)
         emotion = analysis.get("emotion", "neutral")
-        ml_confidence = analysis.get("confidence", 0.5)
+        confidence = analysis.get("confidence", 0.5)
+        severity = analysis.get("severity_level", "Low")
+        
+        # 2. Get Structured Therapy Response
+        therapy = get_therapeutic_response(emotion, severity)
+        
+        # 3. Format Response with rich markdown
+        response_text = therapy["empathetic_response"]
+        
+        if therapy["cbt_suggestions"]:
+            response_text += "\n\n**💡 Cognitive Behavioral Exercise:**\n" + therapy["cbt_suggestions"][0]
+            
+        if therapy["coping_strategies"]:
+            response_text += "\n\n**🌿 Coping Strategies:**\n" + "\n".join([f"• {s}" for s in therapy["coping_strategies"][:2]])
+
+        if therapy["professional_referral"]:
+            response_text += "\n\n**🏥 Professional Note:** Based on your current state, I strongly recommend speaking with a licensed therapist."
+
+        return {
+            "status": "success",
+            "response": response_text,
+            "confidence": confidence,
+            "triage": "Urgent" if severity == "High" else "Routine",
+            "causes": [{"name": emotion.capitalize(), "risk": severity.lower(), "description": f"Detected mood: {emotion}"}],
+            "next_steps": therapy["coping_strategies"][:3],
+            "risk_flags": [emotion],
+            "follow_up_questions": therapy["conversation_prompts"]
+        }
+        
     except Exception as e:
-        logger.warning("mental_engine unavailable: %s", e)
-        emotion = "unknown"
-        ml_confidence = 0.5
-
-    # Crisis response takes priority
-    if risk_flags:
-        response_text = (
-            "🆘 **I hear you, and I want you to know that you matter.**\n\n"
-            "What you're feeling right now is temporary, even though it may not feel that way. "
-            "Please reach out to someone who can help:\n\n"
-            "📞 **Crisis Helplines:**\n"
-            "- 🇮🇳 India: iCall — 9152987821\n"
-            "- 🇮🇳 Vandrevala Foundation — 1860-2662-345\n"
-            "- 🇺🇸 USA: 988 Suicide & Crisis Lifeline — dial 988\n"
-            "- 🌍 International: findahelpline.com\n\n"
-            "You are not alone. Someone cares about you right now. 💙"
-        )
-        confidence = 0.98
-    elif emotion in ["sadness", "depression"]:
-        response_text = (
-            "I can sense you're going through a difficult time, and I appreciate you "
-            "sharing this with me. 💙\n\n"
-            "It's completely okay to feel sad. Here are some things that might help:\n\n"
-            "1. **Talk to someone** — a friend, family member, or counselor\n"
-            "2. **Practice self-care** — eat well, sleep enough, move your body\n"
-            "3. **Be gentle with yourself** — you don't have to have it all figured out\n"
-            "4. **Journal your thoughts** — writing can help process emotions\n\n"
-            "Would you like to tell me more about what's been on your mind?"
-        )
-        confidence = round(ml_confidence, 2)
-    elif emotion in ["anger"]:
-        response_text = (
-            "I understand you're feeling frustrated or angry. Those are valid emotions. 🧡\n\n"
-            "**Some techniques that may help:**\n\n"
-            "1. **Deep breathing** — inhale for 4 counts, hold 4, exhale 4\n"
-            "2. **Physical activity** — even a short walk can help\n"
-            "3. **Step back** — give yourself space before reacting\n"
-            "4. **Name your triggers** — understanding what upsets you gives you power\n\n"
-            "Would you like to talk about what's causing these feelings?"
-        )
-        confidence = round(ml_confidence, 2)
-    elif emotion in ["fear", "anxiety"]:
-        response_text = (
-            "I hear you. Anxiety and fear can feel overwhelming, but you're taking "
-            "a brave step by talking about it. 💙\n\n"
-            "**Grounding techniques that may help right now:**\n\n"
-            "1. **5-4-3-2-1 method** — name 5 things you see, 4 you touch, 3 you hear, "
-            "2 you smell, 1 you taste\n"
-            "2. **Box breathing** — 4 counts in, 4 hold, 4 out, 4 hold\n"
-            "3. **Progressive muscle relaxation** — tense and release each muscle group\n\n"
-            "Would you like to explore what's triggering your anxiety?"
-        )
-        confidence = round(ml_confidence, 2)
-    else:
-        response_text = (
-            "Thank you for reaching out. I'm here to listen and support you. 💙\n\n"
-            "How are you feeling right now? Take your time — there's no rush.\n\n"
-            "I can help with:\n"
-            "- Understanding your emotions\n"
-            "- Coping strategies for stress, anxiety, or sadness\n"
-            "- Mindfulness and relaxation techniques\n"
-            "- When to seek professional support\n\n"
-            "Whatever you're going through, you don't have to face it alone."
-        )
-        confidence = 0.65
-
-    return {
-        "response": response_text,
-        "confidence": confidence,
-        "risk_flags": risk_flags,
-    }
+        logger.error("Mental health analysis failed: %s", e)
+        return {
+            "status": "error",
+            "response": "I'm here to listen, but I'm having trouble analyzing our conversation right now. How are you feeling?",
+            "confidence": 0.0,
+            "triage": "Unknown",
+            "causes": [],
+            "next_steps": ["Share more feelings"],
+            "risk_flags": []
+        }
 
 
 def process_chat(
@@ -251,25 +284,12 @@ def process_chat(
     mode: str,
     language: str = "en",
     session_id: str | None = None,
-) -> dict:
-    """
-    Process a chat message in the specified mode and store history.
-
-    Args:
-        db: Database session
-        user_id: Authenticated user ID
-        message: User's message text
-        mode: 'health' or 'mental'
-        language: Response language code
-        session_id: Optional session grouping ID
-
-    Returns:
-        Chat response dict with success, mode, response, confidence, risk_flags
-    """
+) -> dict[str, Any]:
+    """Main chat processing function with all safety and AI systems integrated."""
+    
     if not session_id:
         session_id = str(uuid.uuid4())
 
-    # Store user message
     user_entry = ChatHistory(
         user_id=user_id,
         role="user",
@@ -279,31 +299,37 @@ def process_chat(
     )
     db.add(user_entry)
 
-    # Generate response based on mode
-    if mode == "mental":
-        result = _mental_response(message, language)
-    else:
-        result = _health_response(message, language)
+    try:
+        if mode == "mental":
+            result = _mental_response(db, user_id, message)
+        else:  # health mode (default)
+            result = _health_response(db, user_id, message, language)
+    except Exception as exc:
+        logger.error("chat processing failed: %s", exc, exc_info=True)
+        db.rollback()
+        return {
+            "status": "error",
+            "message": "Unable to process request",
+            "session_id": session_id,
+        }
 
-    # Store assistant response
     assistant_entry = ChatHistory(
         user_id=user_id,
         role="assistant",
-        content=result["response"],
+        content=result.get("response", ""),
         session_id=session_id,
         metadata_={
             "mode": mode,
-            "confidence": result["confidence"],
-            "risk_flags": result["risk_flags"],
+            "confidence": result.get("confidence"),
+            "triage": result.get("triage"),
+            "risk_flags": result.get("risk_flags", []),
+            "causes": result.get("causes", []),
+            "next_steps": result.get("next_steps", []),
+            "model_used": result.get("model_used", "unknown"),
         },
     )
     db.add(assistant_entry)
     db.commit()
 
-    return {
-        "mode": mode,
-        "response": result["response"],
-        "confidence": result["confidence"],
-        "risk_flags": result["risk_flags"],
-        "session_id": session_id,
-    }
+    result["session_id"] = session_id
+    return result

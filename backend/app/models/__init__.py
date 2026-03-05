@@ -7,6 +7,10 @@ from backend.app.models.medication_log import MedicationLog
 from backend.app.models.lab_report import LabReport
 from backend.app.models.xray_report import XrayReport
 from backend.app.models.chat_history import ChatHistory
+from backend.app.models.feedback import Feedback
+from backend.app.models.image_analysis import ImageAnalysis
+from backend.app.models.location_data import LocationData
+from backend.app.models.password_reset_token import PasswordResetToken
 
 __all__ = [
     "User",
@@ -18,5 +22,9 @@ __all__ = [
     "LabReport",
     "XrayReport",
     "ChatHistory",
+    "Feedback",
+    "ImageAnalysis",
+    "LocationData",
+    "PasswordResetToken",
 ]
 

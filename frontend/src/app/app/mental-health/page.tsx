@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Phone, AlertTriangle, Send, Mic, Bot, User, Search } from 'lucide-react';
+import api, { getErrorMessage } from '@/lib/api';
 
 const emojis = [
     { emoji: '😢', label: 'Very Low', value: 1, color: '#EF4444' },
@@ -29,29 +30,30 @@ export default function MentalHealthPage() {
 
     useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, isTyping]);
 
-    const handleChatSend = () => {
+    const handleChatSend = async () => {
         if (!chatInput.trim()) return;
         const userMsg = chatInput.trim();
         setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
         setChatInput('');
         setIsTyping(true);
 
-        setTimeout(() => {
-            let response = '';
-            const lower = userMsg.toLowerCase();
-            if (lower.includes('anxious') || lower.includes('anxiety')) {
-                response = "I hear you. Anxiety can feel overwhelming, but there are effective strategies:\n\n**Immediate Relief:**\n• Try the 4-7-8 breathing technique: Inhale 4s, hold 7s, exhale 8s\n• Ground yourself: Name 5 things you see, 4 you touch, 3 you hear\n\n**Long-term:**\n• Regular exercise (even 20-min walks)\n• Limit caffeine and screen time\n• Consider talking to a professional\n\nWould you like me to guide you through a breathing exercise?";
-            } else if (lower.includes('sleep') || lower.includes('insomnia')) {
-                response = "Sleep difficulties can really impact your well-being. Here are some evidence-based tips:\n\n• **Set a consistent sleep schedule** — same time every day\n• **Create a wind-down routine** — dim lights 1h before bed\n• **Avoid screens** 30 min before sleep\n• **Keep your room cool** (18-20°C is optimal)\n• **Try progressive muscle relaxation** before bed\n\nShall I start a Sleep Story to help you relax?";
-            } else if (lower.includes('stress') || lower.includes('overwhelm')) {
-                response = "Stress management is crucial for your health. Let me suggest a few approaches:\n\n**Quick Stress Busters:**\n• Take 5 deep breaths right now\n• Step outside for a short walk\n• Write down 3 things you're grateful for\n\n**Ongoing Strategies:**\n• Break tasks into smaller pieces\n• Set boundaries — it's okay to say no\n• Schedule 'me time' daily, even 10 minutes\n\nYour current mood suggests you might benefit from a guided meditation. Want to try one?";
-            } else {
-                response = `Thank you for sharing. Your feelings are valid and important.\n\nBased on your current mood level (${emojis[moodValue - 1].label}), I'd recommend:\n• Taking a moment for mindful breathing\n• Engaging in an activity you enjoy\n• Reaching out to someone you trust\n\nIs there anything specific you'd like guidance on? I'm here to help.`;
-            }
+        try {
+            const { data } = await api.post('/mental/analyze', {
+                text: `Mood level: ${emojis[moodValue - 1].label}. User message: ${userMsg}`,
+            });
+
+            const response = typeof data === 'string' ? data
+                : data?.response || data?.analysis || data?.message || JSON.stringify(data);
 
             setMessages(prev => [...prev, { role: 'ai', text: response }]);
-            setIsTyping(false);
-        }, 1200);
+        } catch (err) {
+            setMessages(prev => [...prev, {
+                role: 'ai',
+                text: `I'm sorry, I couldn't process your request right now. ${getErrorMessage(err)}`,
+            }]);
+        }
+
+        setIsTyping(false);
     };
 
     const currentEmoji = emojis[moodValue - 1];

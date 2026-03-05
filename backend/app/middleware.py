@@ -38,19 +38,27 @@ class ResponseWrapperMiddleware(BaseHTTPMiddleware):
         except (json.JSONDecodeError, ValueError):
             return response  # Not valid JSON — pass through
 
-        is_success = 200 <= response.status_code < 400
+        # If response already follows the API envelope contract, don't re-wrap.
+        if (
+            isinstance(original, dict)
+            and "status" in original
+            and ("message" in original or "data" in original or "response" in original)
+        ):
+            return JSONResponse(content=original, status_code=response.status_code)
 
+        is_success = 200 <= response.status_code < 400
+        status_str = "success" if is_success else "error"
+
+        # Construct the standardized envelope
         wrapped = {
-            "success": is_success,
-            "data": original if is_success else None,
-            "message": "OK" if is_success else original.get("detail", "An error occurred"),
+            "status": status_str,
+            "data": original if is_success else (original.get("data") if isinstance(original, dict) else None),
+            "message": "OK" if is_success else (original.get("detail", "An error occurred") if isinstance(original, dict) else str(original)),
         }
 
-        # For error responses, also include the error key for frontend compat
-        if not is_success:
-            detail = original.get("detail", "An error occurred") if isinstance(original, dict) else "An error occurred"
-            wrapped["message"] = detail
-            wrapped["error"] = detail
+        # Inject confidence if available in the original response
+        if isinstance(original, dict) and "confidence" in original:
+            wrapped["confidence"] = original["confidence"]
 
         return JSONResponse(
             content=wrapped,

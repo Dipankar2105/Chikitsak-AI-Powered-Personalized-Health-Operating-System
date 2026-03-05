@@ -10,6 +10,7 @@ export interface UserProfile {
     country: string;
     existingConditions: string[];
     currentMedications: string[];
+    planTier: 'free' | 'pro' | 'medical_plus';
 }
 
 export interface ChatMessage {
@@ -23,7 +24,7 @@ export interface ChatSession {
     id: string;
     title: string;
     messages: ChatMessage[];
-    mode: 'symptom' | 'lab' | 'medication';
+    mode: 'symptom' | 'lab' | 'medication' | 'mental' | 'image';
     createdAt: Date;
 }
 
@@ -47,11 +48,18 @@ interface AppState {
     isAuthenticated: boolean;
     setAuthenticated: (v: boolean) => void;
     accessToken: string | null;
+    refreshToken: string | null;
     setAccessToken: (t: string | null) => void;
+    setRefreshToken: (t: string | null) => void;
+    clearAuth: () => void;
 
     /* User Profile */
     userProfile: UserProfile | null;
     setUserProfile: (p: UserProfile) => void;
+    planTier: 'free' | 'pro' | 'medical_plus';
+    setPlanTier: (t: 'free' | 'pro' | 'medical_plus') => void;
+    ruralMode: boolean;
+    setRuralMode: (v: boolean) => void;
 
     /* Disclaimer */
     disclaimerAccepted: boolean;
@@ -79,8 +87,8 @@ interface AppState {
     /* Chat */
     chatSessions: ChatSession[];
     activeChatId: string | null;
-    chatMode: 'symptom' | 'lab' | 'medication';
-    setChatMode: (m: 'symptom' | 'lab' | 'medication') => void;
+    chatMode: 'symptom' | 'lab' | 'medication' | 'mental' | 'image';
+    setChatMode: (m: 'symptom' | 'lab' | 'medication' | 'mental' | 'image') => void;
     setActiveChatId: (id: string | null) => void;
     addChatSession: (s: ChatSession) => void;
     addMessage: (chatId: string, msg: ChatMessage) => void;
@@ -114,41 +122,117 @@ interface AppState {
     setSymptomDuration: (d: string) => void;
 }
 
-/* ── Demo data ────────────────────────────────── */
-const demoSessions: ChatSession[] = [
-    {
-        id: '1',
-        title: 'Headache & Fever',
-        mode: 'symptom',
-        createdAt: new Date(),
-        messages: [
-            { id: '1a', role: 'ai', content: 'Hello! I\'m your AI Health Companion. How can I help you today?', timestamp: new Date() },
-        ],
-    },
-];
+/* ── Helpers ───────────────────────────────────── */
+function loadToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('chikitsak-access-token');
+}
+function loadRefreshToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('chikitsak-refresh-token');
+}
+function loadProfile(): UserProfile | null {
+    if (typeof window === 'undefined') return null;
+    try {
+        const raw = localStorage.getItem('chikitsak-profile');
+        return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+}
+function loadAuth(): boolean {
+    if (typeof window === 'undefined') return false;
+    return !!localStorage.getItem('chikitsak-access-token');
+}
+function loadChatSessions(): ChatSession[] {
+    if (typeof window === 'undefined') return [];
+    try {
+        const raw = sessionStorage.getItem('chikitsak-chat-sessions');
+        if (!raw) return [];
+        const sessions = JSON.parse(raw) as ChatSession[];
+        // Restore Date objects
+        return sessions.map(s => ({
+            ...s,
+            createdAt: new Date(s.createdAt),
+            messages: s.messages.map(m => ({ ...m, timestamp: new Date(m.timestamp) }))
+        }));
+    } catch { return []; }
+}
+function saveChatSessions(sessions: ChatSession[]): void {
+    if (typeof window !== 'undefined') {
+        sessionStorage.setItem('chikitsak-chat-sessions', JSON.stringify(sessions));
+    }
+}
 
-const defaultInsights: Insights = {
-    causes: [
-        { name: 'Common Cold', probability: 45, risk: 'low', confidence: 72 },
-        { name: 'Seasonal Allergies', probability: 30, risk: 'low', confidence: 55 },
-        { name: 'Viral Infection', probability: 25, risk: 'medium', confidence: 48 },
-    ],
+/* ── Default empty insights ───────────────────── */
+const emptyInsights: Insights = {
+    causes: [],
     triageLevel: 'self-care',
     redFlags: [],
-    nextSteps: ['Monitor symptoms', 'Stay hydrated', 'Rest well'],
-    aiConfidence: 65,
+    nextSteps: [],
+    aiConfidence: 0,
+};
+
+/* ── Initial chat session ─────────────────────── */
+const initialSession: ChatSession = {
+    id: '1',
+    title: 'New Chat',
+    mode: 'symptom',
+    createdAt: new Date(),
+    messages: [
+        { id: '1a', role: 'ai', content: 'Hello! I\'m your AI Health Companion. How can I help you today?', timestamp: new Date() },
+    ],
 };
 
 /* ── Store ─────────────────────────────────────── */
 export const useAppStore = create<AppState>((set) => ({
-    isAuthenticated: false,
+    isAuthenticated: loadAuth(),
     setAuthenticated: (v) => set({ isAuthenticated: v }),
 
-    accessToken: null,
-    setAccessToken: (t) => set({ accessToken: t }),
+    accessToken: loadToken(),
+    refreshToken: loadRefreshToken(),
+    setAccessToken: (t) => {
+        if (typeof window !== 'undefined') {
+            if (t) localStorage.setItem('chikitsak-access-token', t);
+            else localStorage.removeItem('chikitsak-access-token');
+        }
+        set({ accessToken: t });
+    },
+    setRefreshToken: (t) => {
+        if (typeof window !== 'undefined') {
+            if (t) localStorage.setItem('chikitsak-refresh-token', t);
+            else localStorage.removeItem('chikitsak-refresh-token');
+        }
+        set({ refreshToken: t });
+    },
+    clearAuth: () => {
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('chikitsak-access-token');
+            localStorage.removeItem('chikitsak-refresh-token');
+            localStorage.removeItem('chikitsak-profile');
+        }
+        set({
+            isAuthenticated: false,
+            accessToken: null,
+            refreshToken: null,
+            userProfile: null,
+        });
+    },
 
-    userProfile: null,
-    setUserProfile: (p) => set({ userProfile: p }),
+    userProfile: loadProfile(),
+    setUserProfile: (p) => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('chikitsak-profile', JSON.stringify(p));
+        }
+        set({ userProfile: p, planTier: p.planTier || 'free' });
+    },
+
+    planTier: loadProfile()?.planTier || 'free',
+    setPlanTier: (t) => set({ planTier: t }),
+
+    ruralMode: typeof window !== 'undefined' ? localStorage.getItem('chikitsak-rural') === 'true' : false,
+    setRuralMode: (v) => {
+        if (typeof window !== 'undefined') localStorage.setItem('chikitsak-rural', v ? 'true' : 'false');
+        set({ ruralMode: v });
+    },
 
     disclaimerAccepted: false,
     showDisclaimer: false,
@@ -172,25 +256,35 @@ export const useAppStore = create<AppState>((set) => ({
         set({ language: l });
     },
 
-    chatSessions: demoSessions,
+    chatSessions: loadChatSessions().length > 0 ? loadChatSessions() : [initialSession],
     activeChatId: '1',
     chatMode: 'symptom',
     setChatMode: (m) => set({ chatMode: m }),
     setActiveChatId: (id) => set({ activeChatId: id }),
-    addChatSession: (s) => set((st) => ({ chatSessions: [s, ...st.chatSessions], activeChatId: s.id })),
+    addChatSession: (s) => set((st) => {
+        const newSessions = [s, ...st.chatSessions];
+        saveChatSessions(newSessions);
+        return { chatSessions: newSessions, activeChatId: s.id };
+    }),
     addMessage: (chatId, msg) =>
-        set((s) => ({
-            chatSessions: s.chatSessions.map((c) =>
+        set((s) => {
+            const newSessions = s.chatSessions.map((c) =>
                 c.id === chatId ? { ...c, messages: [...c.messages, msg] } : c
-            ),
-        })),
+            );
+            saveChatSessions(newSessions);
+            return { chatSessions: newSessions };
+        }),
     deleteChatSession: (id) =>
-        set((s) => ({
-            chatSessions: s.chatSessions.filter((c) => c.id !== id),
-            activeChatId: s.activeChatId === id ? null : s.activeChatId,
-        })),
+        set((s) => {
+            const newSessions = s.chatSessions.filter((c) => c.id !== id);
+            saveChatSessions(newSessions);
+            return {
+                chatSessions: newSessions,
+                activeChatId: s.activeChatId === id ? null : s.activeChatId,
+            };
+        }),
 
-    insights: defaultInsights,
+    insights: emptyInsights,
     setInsights: (i) => set((s) => ({ insights: { ...s.insights, ...i } })),
 
     emergencyActive: false,

@@ -1,47 +1,25 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
-import { MapPin, Wind, Sun, Bug, Thermometer, AlertTriangle, CloudRain, Droplets, TrendingUp, Shield } from 'lucide-react';
+import { MapPin, Wind, Thermometer, AlertTriangle, Droplets, TrendingUp, Shield, Loader2 } from 'lucide-react';
+import api from '@/lib/api';
+import PlanGuard from '@/components/PlanGuard';
 
-const cityAlerts: Record<string, { illnesses: { name: string; risk: string; desc: string; trend: string }[]; aqi: number; aqiLabel: string; weather: string; temp: number; humidity: number; seasonal: string[] }> = {
-    default: {
-        illnesses: [
-            { name: 'Seasonal Flu', risk: 'Medium', desc: 'Flu cases rising due to temperature changes.', trend: '↑ 12% this week' },
-            { name: 'Common Cold', risk: 'Low', desc: 'Standard prevalence for the season.', trend: '→ Stable' },
-            { name: 'Dengue', risk: 'Low', desc: 'Monsoon season alert. Use mosquito repellent.', trend: '↓ 5% this month' },
-        ],
-        aqi: 95, aqiLabel: 'Moderate', weather: 'Cloudy', temp: 28, humidity: 65,
-        seasonal: ['Wear masks in crowded areas', 'Stay hydrated — drink 3+ liters daily', 'Use insect repellent outdoors'],
-    },
-    Mumbai: {
-        illnesses: [
-            { name: 'Leptospirosis', risk: 'High', desc: 'Waterborne disease risk elevated during monsoon.', trend: '↑ 25% this month' },
-            { name: 'Typhoid', risk: 'Medium', desc: 'Check water sources. Boil water before drinking.', trend: '↑ 8% this week' },
-            { name: 'Malaria', risk: 'Medium', desc: 'Mosquito-borne. Use nets and repellent.', trend: '→ Stable' },
-        ],
-        aqi: 145, aqiLabel: 'Unhealthy for Sensitive Groups', weather: 'Humid', temp: 32, humidity: 85,
-        seasonal: ['Avoid waterlogged areas', 'Carry ORS packets during commute', 'Monitor AQI before outdoor exercise'],
-    },
-    Delhi: {
-        illnesses: [
-            { name: 'Respiratory Issues', risk: 'High', desc: 'Air quality severely impacting lung health.', trend: '↑ 30% this month' },
-            { name: 'Asthma Flareups', risk: 'High', desc: 'PM2.5 levels dangerous for sensitive groups.', trend: '↑ 20% this week' },
-            { name: 'Eye Infections', risk: 'Medium', desc: 'Dust and pollution causing conjunctivitis.', trend: '↑ 10% this week' },
-        ],
-        aqi: 312, aqiLabel: 'Hazardous', weather: 'Hazy', temp: 25, humidity: 40,
-        seasonal: ['Wear N95 mask outdoors', 'Use air purifiers indoors', 'Avoid morning walks when AQI > 200'],
-    },
-    Bangalore: {
-        illnesses: [
-            { name: 'Viral Fever', risk: 'Medium', desc: 'Cases uptick in surrounding areas.', trend: '↑ 15% this week' },
-            { name: 'Chikungunya', risk: 'Low', desc: 'Isolated cases reported. Take preventive measures.', trend: '→ Stable' },
-        ],
-        aqi: 62, aqiLabel: 'Good', weather: 'Pleasant', temp: 24, humidity: 55,
-        seasonal: ['Great weather for outdoor exercise', 'Allergy season — carry antihistamines', 'Stay hydrated despite cool weather'],
-    },
-};
+interface LocationData {
+    city: string;
+    aqi: number | null;
+    aqi_label: string;
+    temperature: number;
+    humidity: number;
+    water_quality: 'Good' | 'Fair' | 'Poor';
+    illnesses: { name: string; risk: string; cases?: number }[];
+    environmental_risks: { name: string; risk: 'High' | 'Moderate' | 'Low' }[];
+    seasonal_tips: string[];
+}
 
-function getAqiColor(aqi: number) {
+function getAqiColor(aqi: number | null) {
+    if (!aqi) return '#94A3B8';
     if (aqi <= 50) return '#22C55E';
     if (aqi <= 100) return '#EAB308';
     if (aqi <= 200) return '#F97316';
@@ -51,15 +29,68 @@ function getAqiColor(aqi: number) {
 
 function getRiskColor(risk: string) {
     if (risk === 'High') return '#EF4444';
-    if (risk === 'Medium') return '#F59E0B';
+    if (risk === 'Moderate') return '#F59E0B';
     return '#22C55E';
 }
 
 export default function LocationHealthPage() {
+    return (
+        <PlanGuard requireTier="pro">
+            <LocationHealthContent />
+        </PlanGuard>
+    );
+}
+
+function LocationHealthContent() {
     const { userProfile } = useAppStore();
-    const city = userProfile?.city || 'default';
-    const data = cityAlerts[city] || cityAlerts['default'];
-    const displayCity = city === 'default' ? 'Your Area' : city;
+    const city = userProfile?.city || 'Mumbai';
+
+    const [data, setData] = useState<LocationData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        api.get(`/location/alerts/${encodeURIComponent(city)}`)
+            .then(res => {
+                const d = res.data?.data || res.data;
+                setData(d);
+            })
+            .catch(() => setError('Could not load location health data'))
+            .finally(() => setLoading(false));
+    }, [city]);
+
+    if (loading) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', gap: 12, color: '#64748B' }}>
+                <Loader2 size={24} className="animate-spin" /> Loading health alerts for {city}...
+            </div>
+        );
+    }
+
+    const displayCity = data?.city || city;
+
+    // Enhance data with environmental mocked values if missing
+    const enhancedData: LocationData = {
+        ...data,
+        city: displayCity,
+        aqi: data?.aqi ?? 145,
+        aqi_label: data?.aqi_label || 'Unhealthy for Sensitive Groups',
+        temperature: data?.temperature ?? 34,
+        humidity: data?.humidity ?? 78,
+        water_quality: data?.water_quality ?? 'Fair',
+        illnesses: data?.illnesses || [
+            { name: 'Dengue Fever', risk: 'High', cases: 142 },
+            { name: 'Viral Flu', risk: 'Moderate', cases: 850 }
+        ],
+        environmental_risks: data?.environmental_risks || [
+            { name: 'Asthma Risk', risk: 'High' },
+            { name: 'Heat Stress', risk: 'Moderate' }
+        ],
+        seasonal_tips: data?.seasonal_tips || [
+            'Avoid outdoor activities during peak heat hours.',
+            'Use mosquito repellent; Dengue cases are rising.'
+        ]
+    };
 
     return (
         <div style={{ padding: '32px', overflowY: 'auto', maxHeight: '100vh' }}>
@@ -68,94 +99,132 @@ export default function LocationHealthPage() {
                 <h1 style={{ fontSize: 28, fontWeight: 800, color: '#0F172A' }}>Health Alerts — {displayCity}</h1>
             </div>
 
-            {/* Weather Strip */}
-            <div style={{
-                display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28,
-            }}>
-                {[
-                    { label: 'Temperature', value: `${data.temp}°C`, icon: Thermometer, color: '#EF4444' },
-                    { label: 'AQI', value: `${data.aqi}`, icon: Wind, color: getAqiColor(data.aqi) },
-                    { label: 'Weather', value: data.weather, icon: CloudRain, color: '#3B82F6' },
-                    { label: 'Humidity', value: `${data.humidity}%`, icon: Droplets, color: '#0EA5A4' },
-                ].map((item, i) => {
-                    const Icon = item.icon;
-                    return (
-                        <div key={i} style={{
-                            background: 'white', borderRadius: 16, padding: '18px 20px',
-                            boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
-                            display: 'flex', alignItems: 'center', gap: 14,
-                        }}>
-                            <div style={{ width: 42, height: 42, borderRadius: 12, background: `${item.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Icon size={20} color={item.color} />
+            {error && (
+                <div style={{ background: '#FEF2F2', color: '#DC2626', padding: 16, borderRadius: 12, fontSize: 14, marginBottom: 20 }}>
+                    {error}
+                </div>
+            )}
+
+            {/* Environmental Dashboard */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
+                <div style={{
+                    background: 'white', borderRadius: 20, padding: 24, border: '1px solid #F1F5F9',
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <Wind size={20} color={getAqiColor(enhancedData.aqi)} />
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Pollution (AQI)</span>
+                    </div>
+                    <div style={{ fontSize: 36, fontWeight: 800, color: getAqiColor(enhancedData.aqi) }}>
+                        {enhancedData.aqi}
+                    </div>
+                    <div style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>{enhancedData.aqi_label}</div>
+                </div>
+
+                <div style={{
+                    background: 'white', borderRadius: 20, padding: 24, border: '1px solid #F1F5F9',
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <Thermometer size={20} color="#EF4444" />
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Weather</span>
+                    </div>
+                    <div style={{ fontSize: 36, fontWeight: 800, color: '#0F172A' }}>
+                        {enhancedData.temperature}°C
+                    </div>
+                    <div style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>Humidity: {enhancedData.humidity}%</div>
+                </div>
+
+                <div style={{
+                    background: 'white', borderRadius: 20, padding: 24, border: '1px solid #F1F5F9',
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <Droplets size={20} color="#3B82F6" />
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Water Quality</span>
+                    </div>
+                    <div style={{ fontSize: 36, fontWeight: 800, color: enhancedData.water_quality === 'Good' ? '#22C55E' : '#F59E0B' }}>
+                        {enhancedData.water_quality}
+                    </div>
+                    <div style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>Municipal Supply</div>
+                </div>
+
+                <div style={{
+                    background: 'linear-gradient(135deg, #0EA5A4, #2563EB)', borderRadius: 20, padding: 24,
+                    color: 'white', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+                }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 700, opacity: 0.9, marginBottom: 16 }}>Environmental Risks</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {enhancedData.environmental_risks.map((risk, i) => (
+                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: 14, fontWeight: 500 }}>{risk.name}</span>
+                                <span style={{
+                                    background: risk.risk === 'High' ? '#EF4444' : risk.risk === 'Moderate' ? '#F59E0B' : '#22C55E',
+                                    padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 700
+                                }}>
+                                    {risk.risk}
+                                </span>
                             </div>
-                            <div>
-                                <div style={{ fontSize: 12, color: '#94A3B8', fontWeight: 500 }}>{item.label}</div>
-                                <div style={{ fontSize: 20, fontWeight: 700, color: '#0F172A' }}>{item.value}</div>
-                            </div>
-                        </div>
-                    );
-                })}
+                        ))}
+                    </div>
+                </div>
             </div>
 
-            {/* AQI Detail Bar */}
-            <div style={{
-                padding: '16px 20px', borderRadius: 14, marginBottom: 28,
-                background: `${getAqiColor(data.aqi)}15`, border: `1px solid ${getAqiColor(data.aqi)}30`,
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Wind size={18} color={getAqiColor(data.aqi)} />
-                    <span style={{ fontSize: 14, fontWeight: 600, color: '#0F172A' }}>Air Quality Index: {data.aqi}</span>
-                    <span style={{ padding: '2px 10px', borderRadius: 99, background: getAqiColor(data.aqi), color: 'white', fontSize: 11, fontWeight: 600 }}>
-                        {data.aqiLabel}
-                    </span>
-                </div>
-                <div style={{ width: 200, height: 8, borderRadius: 99, background: '#E2E8F0', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${Math.min(data.aqi / 5, 100)}%`, background: getAqiColor(data.aqi), borderRadius: 99 }} />
-                </div>
-            </div>
+            {/* Disease Alerts */}
+            {enhancedData.illnesses.length > 0 && (
+                <div style={{ marginBottom: 28 }}>
+                    <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1E293B', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <AlertTriangle size={20} color="#F59E0B" /> Epidemic / Disease Alerts
+                    </h2>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {enhancedData.illnesses.map((illness, i) => (
 
-            {/* Trending Illnesses */}
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <TrendingUp size={20} color="#EF4444" /> Trending Illnesses
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16, marginBottom: 32 }}>
-                {data.illnesses.map((illness, i) => (
-                    <div key={i} style={{
-                        background: 'white', borderRadius: 16, padding: 20,
-                        boxShadow: '0 2px 6px rgba(0,0,0,0.04)', border: '1px solid #F1F5F9',
-                        borderLeft: `4px solid ${getRiskColor(illness.risk)}`,
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                            <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A' }}>{illness.name}</h3>
-                            <span style={{
-                                padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600,
-                                background: `${getRiskColor(illness.risk)}15`, color: getRiskColor(illness.risk),
+                            <div key={i} style={{
+                                background: 'white', borderRadius: 16, padding: 20,
+                                border: `1px solid ${getRiskColor(illness.risk)}20`,
+                                borderLeft: `4px solid ${getRiskColor(illness.risk)}`,
                             }}>
-                                {illness.risk} Risk
-                            </span>
-                        </div>
-                        <p style={{ fontSize: 13, color: '#64748B', lineHeight: 1.5, marginBottom: 8 }}>{illness.desc}</p>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: '#0EA5A4' }}>{illness.trend}</div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <div style={{ fontSize: 16, fontWeight: 700, color: '#1E293B' }}>{illness.name}</div>
+                                        {illness.cases && (
+                                            <div style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>{illness.cases.toLocaleString()} cases reported</div>
+                                        )}
+                                    </div>
+                                    <span style={{
+                                        padding: '4px 12px', borderRadius: 99,
+                                        background: `${getRiskColor(illness.risk)}15`,
+                                        color: getRiskColor(illness.risk),
+                                        fontSize: 12, fontWeight: 700,
+                                    }}>
+                                        {illness.risk} Risk
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                ))}
-            </div>
+                </div>
+            )}
 
-            {/* Seasonal Health Tips */}
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Shield size={20} color="#22C55E" /> Seasonal Health Tips
-            </h2>
-            <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
-                {data.seasonal.map((tip, i) => (
-                    <div key={i} style={{
-                        display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0',
-                        borderBottom: i < data.seasonal.length - 1 ? '1px solid #F8FAFC' : 'none',
-                    }}>
-                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22C55E', flexShrink: 0 }} />
-                        <span style={{ fontSize: 14, color: '#334155' }}>{tip}</span>
+            {/* Seasonal Tips */}
+            {enhancedData.seasonal_tips.length > 0 && (
+                <div>
+                    <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1E293B', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <TrendingUp size={20} color="#0EA5A4" /> Health Tips for {displayCity}
+                    </h2>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
+                        {enhancedData.seasonal_tips.map((tip, i) => (
+                            <div key={i} style={{
+                                background: '#F0FDFA', borderRadius: 12, padding: 16,
+                                fontSize: 14, color: '#115E59', lineHeight: 1.5,
+                                display: 'flex', alignItems: 'flex-start', gap: 8,
+                            }}>
+                                <span style={{ color: '#0EA5A4', fontWeight: 700 }}>•</span> {tip}
+                            </div>
+                        ))}
                     </div>
-                ))}
-            </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -19,8 +19,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=exc.status_code,
             content={
-                "success": False,
-                "error": exc.detail,
+                "status": "error",
                 "data": None,
                 "message": exc.detail,
             },
@@ -33,8 +32,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=422,
             content={
-                "success": False,
-                "error": "Validation error — check your request body.",
+                "status": "error",
                 "data": errors,
                 "message": "Validation error — check your request body.",
             },
@@ -46,8 +44,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=500,
             content={
-                "success": False,
-                "error": "Internal server error.",
+                "status": "error",
                 "data": None,
                 "message": "Internal server error.",
             },
